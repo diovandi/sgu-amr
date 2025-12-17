@@ -1,0 +1,35 @@
+# Colcon build artifacts
+build/
+install/
+log/
+**/build/
+**/install/
+**/log/
+
+# Bags and other large binary data
+exercise4_recording/*.mcap
+*.mcap
+*.bag
+*.db3
+
+# Editor / IDE / tool metadata
+.cursor/
+**/.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# PDFs and personal / long-form docs
+docs/*.pdf
+*.pdf
+chat_session_full_report*.md
+*_full_report*.md
+ros2_exercises3_4_report.md
+
+# Keep the main README tracked
+!README.md

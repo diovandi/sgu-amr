@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rqt_multiplot>
+    <plot>
+        <title>EKF Path (X-Y)</title>
+        <top>
+            <field>/odometry/filtered/pose/pose/position/y</field>
+            <label>Y</label>
+            <min>-5.0</min>
+            <max>5.0</max>
+        </top>
+        <left>
+            <field>/odometry/filtered/pose/pose/position/x</field>
+            <label>X</label>
+            <min>-5.0</min>
+            <max>5.0</max>
+        </left>
+    </plot>
+</rqt_multiplot>

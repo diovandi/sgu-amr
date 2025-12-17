@@ -1,6 +1,6 @@
-## ROS 2 Exercises 3 & 4 – TurtleBot 4 (UCR EE106)
+## ROS 2 Exercises 3 & 4 – TurtleBot 4 (Autonomous Mobile Robot course @ Swiss German University)
 
-This workspace contains my ROS 2 Jazzy implementation of **Exercise 3 (pillar following)** and **Exercise 4 (bagging + EKF + plotting)** from UCR EE106, adapted to the **TurtleBot 4** in **Gazebo Sim** with **RViz2**.  
+This workspace contains my ROS 2 Jazzy implementation of **Exercise 3 (pillar following)** and **Exercise 4 (bagging + EKF + plotting)** from the Autonomous Mobile Robot course at Swiss German University, adapted to the **TurtleBot 4** in **Gazebo Sim** with **RViz2**.  
 All code lives under the `src/` directory, primarily in the `exercise_launch` package.
 
 The full lab report with technical details is in `ros2_exercises3_4_report.md`.  

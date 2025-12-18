@@ -1252,10 +1252,29 @@ During Phase 3 SLAM testing, false perpendicular walls appeared in front of the 
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{screenshots/lidar/lidar_troubleshooting_false_wall_rviz.png}
-    \caption{False wall detection in RViz: LIDAR detecting ground plane when robot pitched forward}
-    \label{fig:false_wall_rviz}
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{screenshots/lidar/lidar_troubleshooting_false_wall_gazebo.png}
+        \caption{Gazebo view: Robot pitched forward, LIDAR beam hitting ground plane}
+        \label{fig:false_wall_gazebo}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{screenshots/lidar/lidar_troubleshooting_false_wall_rviz.png}
+        \caption{RViz view: False perpendicular wall appears at minimum range due to ground detection}
+        \label{fig:false_wall_rviz}
+    \end{minipage}
 \end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth]{screenshots/lidar/lidar_troubleshooting_nocastor.png}
+    \caption{Root cause diagnosis: Robot without front caster wheel pitches forward during braking, causing LIDAR to tilt downward and detect ground plane as obstacle}
+    \label{fig:lidar_nocastor_tilt}
+\end{figure}
+
+The side-by-side comparison in Figures \ref{fig:false_wall_gazebo} and \ref{fig:false_wall_rviz} clearly shows the false detection issue in both simulation and visualization. Figure \ref{fig:lidar_nocastor_tilt} was the breakthrough moment—revealing that the tilt caused by forward pitch was the root cause of ground plane detection.
 
 \subsection{Mechanical Solution: Front Caster Wheel}
 
@@ -1602,6 +1621,28 @@ planner_server:
       use_astar: false  # Use Dijkstra
 \end{lstlisting}
 
+\section{Successful Navigation Demonstration}
+
+\subsection{Goal Setting and Path Execution}
+
+The navigation system successfully accepts goals through RViz and executes autonomous navigation:
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{screenshots/nav/nav_set_goal_pose.png}
+    \caption{Setting a goal pose in RViz: Using the "2D Goal Pose" tool to specify target position and orientation}
+    \label{fig:nav_set_goal}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{screenshots/nav/nav_pathing_goal_pose.png}
+    \caption{Path planning and execution: Robot autonomously navigates to the specified goal, with planned path shown in green and costmaps visible}
+    \label{fig:nav_pathing}
+\end{figure}
+
+The workflow demonstrates the complete navigation pipeline: operator specifies goal → planner computes path → controller executes trajectory → robot reaches goal.
+
 \section{Controller Configuration}
 
 \subsection{Regulated Pure Pursuit (Specification Requirement)}
@@ -1716,6 +1757,37 @@ Under wheel slip conditions (collisions, sudden direction changes), odometry div
     \item Particle filter spreads widely
     \item Multiple goal commands may be needed for long traversals
 \end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{screenshots/nav/nav_troubleshooting_gazebo.png}
+        \caption{Gazebo view: Actual robot position crashing against doorframe}
+        \label{fig:nav_trouble_gazebo}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{screenshots/nav/nav_troubleshooting_rviz.png}
+        \caption{RViz view: Robot believes it is in center of room, rotated ~75° clockwise from actual orientation}
+        \label{fig:nav_trouble_rviz}
+    \end{minipage}
+\end{figure}
+
+Figure \ref{fig:nav_trouble_gazebo} and \ref{fig:nav_trouble_rviz} show a severe localization failure. The robot's actual position (crashing against doorframe) completely diverges from its belief (centered in small room). This catastrophic desynchronization occurs when:
+\begin{itemize}
+    \item Wheel slip invalidates odometry
+    \item Particle filter converges to wrong hypothesis
+    \item Insufficient distinguishing features in environment
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{screenshots/nav/nav_troubleshooting.png}
+    \caption{Complete system breakdown: Severe jitter and desynchronization between estimated and actual pose. Visual artifacts indicate transform instability.}
+    \label{fig:nav_breakdown}
+\end{figure}
 
 This fundamental limitation motivates ongoing research in robust localization.
 
@@ -1936,6 +2008,13 @@ self.actual_path_pub.publish(self.actual_path)
 
 For XY trajectory plotting, analysis node publishes \texttt{PointStamped} messages:
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/patrol/patrol_plot_window.png}
+    \caption{PlotJuggler XY plot interface: Streaming planned vs actual trajectory data during bag playback}
+    \label{fig:plotjuggler_window}
+\end{figure}
+
 \begin{lstlisting}[language=Python]
 # Publish for PlotJuggler streaming
 actual_xy = PointStamped()
@@ -1954,9 +2033,28 @@ PlotJuggler subscribes live during playback, creating XY scatter plots comparing
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{screenshots/patrol/patrol_plot.png}
-    \caption{Planned vs actual trajectory comparison in PlotJuggler: Red points show planned path, green points show actual executed path with localization drift visible}
+    \caption{Planned vs actual trajectory comparison: X-Y scatter plot showing complete patrol path. Deviations indicate localization drift and path tracking errors throughout the mission.}
     \label{fig:patrol_plot}
 \end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{screenshots/patrol/patrol_rviz_visualisation.png}
+        \caption{RViz patrol visualization: Robot model, map, planned path (green), and actual trajectory}
+        \label{fig:patrol_rviz_viz}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{screenshots/patrol/patrol_robot_closeup.png}
+        \caption{Close-up view of robot during patrol execution showing sensor data and costmap overlays}
+        \label{fig:patrol_robot_closeup}
+    \end{minipage}
+\end{figure}
+
+Figures \ref{fig:plotjuggler_window} through \ref{fig:patrol_robot_closeup} demonstrate the complete analysis pipeline. The PlotJuggler interface (Figure \ref{fig:plotjuggler_window}) streams live trajectory data during playback, producing the comprehensive X-Y plot (Figure \ref{fig:patrol_plot}). The RViz visualizations (Figures \ref{fig:patrol_rviz_viz} and \ref{fig:patrol_robot_closeup}) show the robot's real-time state during patrol execution.
 
 Observations from trajectory comparison:
 \begin{itemize}
@@ -2793,9 +2891,9 @@ ros2 bag info exercise4_recording
 \midrule
 Operating System & Pop!\_OS 24.04 LTS (based on Ubuntu 24.04) \\
 Kernel & Linux 6.17.9 \\
-CPU & [Unspecified - modern x86-64] \\
+CPU & Intel i5-13400F \\
 GPU & NVIDIA RTX 3080 \\
-RAM & [Unspecified - adequate for simulation] \\
+RAM & 32GB DDR4 3200MHz \\
 \bottomrule
 \end{tabular}
 \end{table}

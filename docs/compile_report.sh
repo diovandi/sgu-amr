@@ -21,9 +21,12 @@ if ! command -v pdflatex &> /dev/null; then
     exit 1
 fi
 
-# Check if bibtex is installed
-if ! command -v bibtex &> /dev/null; then
-    echo "Error: bibtex not found. Please install TeX Live or MiKTeX."
+# Check if biber is installed
+if ! command -v biber &> /dev/null; then
+    echo "Error: biber not found. Please install biblatex and biber."
+    echo ""
+    echo "On Ubuntu/Pop!_OS, install with:"
+    echo "  sudo apt-get install biber"
     exit 1
 fi
 
@@ -37,9 +40,9 @@ pdflatex -interaction=nonstopmode -halt-on-error "$MAIN.tex" || {
 }
 
 echo ""
-echo "Step 2/5: Running BibTeX..."
-bibtex "$MAIN" || {
-    echo "Warning: BibTeX reported errors. Check $MAIN.blg for details."
+echo "Step 2/5: Running Biber..."
+biber "$MAIN" || {
+    echo "Warning: Biber reported errors. Check $MAIN.blg for details."
     echo "Continuing anyway..."
 }
 

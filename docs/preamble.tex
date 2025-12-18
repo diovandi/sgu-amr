@@ -13,6 +13,7 @@
     right=2.5cm,
     headheight=15pt
 ]{geometry}
+\sloppy % Helps with overfull hboxes in technical documents with long strings
 
 % Font encoding
 \usepackage[T1]{fontenc}
@@ -25,6 +26,11 @@
 \usepackage{amsthm}
 \usepackage{mathtools}
 \usepackage{bm} % Bold math symbols
+
+% Todo and placeholders
+\usepackage{xstring}
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\MISSING}[1]{\colorbox{yellow}{\textbf{#1}}}
 
 % Graphics and figures
 \usepackage{graphicx}

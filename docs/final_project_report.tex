@@ -20,15 +20,15 @@
     
     {\Large Final Project Report\par}
     
-    \vspace{2cm}
+    \vspace{1cm}
     
     {\Large\itshape Diovandi Basheera Putra\par}
     
+    \vspace{0.5cm}
+    
+    {\large Student ID: 12301058\par}
+    
     \vspace{1cm}
-    
-    {\large Student ID: [Student ID]\par}
-    
-    \vspace{2cm}
     
     {\large 
     Submitted in partial fulfillment of the requirements\\
@@ -40,9 +40,9 @@
     
     Swiss German University\\
     Faculty of Engineering and Information Technology\\
-    \vspace{1cm}
+    \vspace{0.5cm}
     
-    December 18, 2025
+    18 December 2025
     }
     
     \vfill
@@ -1079,6 +1079,13 @@ This chapter describes the software architecture, including the ROS 2 package st
 
 The system is built on ROS 2 Jazzy with the following key packages:
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{screenshots/nav/nav_rosgraph.png}
+    \caption{ROS 2 Computational Graph (rqt\_graph) of the navigation system: showing the interconnection between sensor nodes, the EKF filter, and the Nav2 navigation servers.}
+    \label{fig:rqt_graph}
+\end{figure}
+
 \begin{itemize}
     \item \textbf{exercise\_launch:} Custom package containing all launch files, configurations, and nodes
     \item \textbf{robot\_localization:} EKF sensor fusion
@@ -1676,7 +1683,8 @@ Key parameters:
 
 \section{Navigation Troubleshooting}
 
-\subsection{Issue 1: Frame ID Mismatch (base\_footprint vs base\_link)}
+\subsection[Issue 1: Frame ID Mismatch]{Issue 1: Frame ID Mismatch (\texttt{base\_footprint} vs \texttt{base\_link})}
+\label{sec:frame_mismatch}
 
 Initial Nav2 configuration used \texttt{base\_footprint} (TurtleBot convention), but \texttt{rudimentary\_bot} URDF defines \texttt{base\_link}.
 
@@ -1721,7 +1729,8 @@ Update Topic:
   Durability Policy: Transient Local
 \end{lstlisting}
 
-\subsection{Issue 4: Transform Authority Conflicts}
+\subsection[Issue 4: Transform Authority Conflicts]{Issue 4: Transform Authority Conflicts (\texttt{publish\_odom\_tf})}
+\label{sec:tf_conflicts}
 
 Attempting to make Gazebo diff\_drive publish \texttt{odom → base\_link} TF (via \texttt{publish\_odom\_tf: true}) while EKF also published it caused:
 \begin{itemize}
@@ -2089,7 +2098,7 @@ Quantitative analysis (Phase 6 results):
     \item Topic remapping: TF conflicts persisted
 \end{enumerate}
 
-\textbf{Successful solution:} Create specialized analysis URDF (\texttt{rudimentary\_bot\_analysis.urdf.xacro}) with wheels converted from \texttt{continuous} to \texttt{fixed} joints.
+\textbf{Successful solution:} Create specialized analysis URDF (\texttt{rudimentary\_bot\_} \texttt{analysis.urdf.xacro}) with wheels converted from \texttt{continuous} to \texttt{fixed} joints.
 
 Wheels become part of static robot geometry, rendered correctly without dynamic joint states:
 
@@ -2734,6 +2743,12 @@ Most importantly, the project achieved its educational objective: developing dee
 
 
 % ==========================================
+% BIBLIOGRAPHY AND END
+% ==========================================
+
+\printbibliography
+
+% ==========================================
 % APPENDICES
 % ==========================================
 
@@ -2917,13 +2932,6 @@ Python & 3.12+ \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-
-% ==========================================
-% BIBLIOGRAPHY AND END
-% ==========================================
-
-\printbibliography
 
 \end{document}
 

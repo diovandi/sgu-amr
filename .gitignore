@@ -48,7 +48,12 @@ docs/*.nls
 docs/*.ilg
 docs/*.idx
 docs/*.ind
+docs/*.bcf
+docs/*.run.xml
+docs/*.fdb_latexmk
+docs/*.fls
 docs/compiled/*.pdf
+*.gv
 
 # Keep the main README tracked
 !README.md

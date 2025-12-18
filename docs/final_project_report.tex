@@ -1,0 +1,2831 @@
+\input{preamble}
+\input{commands}
+
+\begin{document}
+
+% ==========================================
+% FRONT MATTER
+% ==========================================
+
+% Title Page
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries Domestic Mobile Robot:\\[0.5cm]
+    Autonomous Navigation with\\[0.5cm]
+    Nav2 and SLAM\par}
+    
+    \vspace{1.5cm}
+    
+    {\Large Final Project Report\par}
+    
+    \vspace{2cm}
+    
+    {\Large\itshape Diovandi Basheera Putra\par}
+    
+    \vspace{1cm}
+    
+    {\large Student ID: [Student ID]\par}
+    
+    \vspace{2cm}
+    
+    {\large 
+    Submitted in partial fulfillment of the requirements\\
+    for the course\\[0.5cm]
+    \textbf{Autonomous Mobile Robot}\\
+    (2025-2026/2025-1-2943)\\[1cm]
+    
+    Instructor: \textbf{Dr. Rusman Rusyadi}\\[1cm]
+    
+    Swiss German University\\
+    Faculty of Engineering and Information Technology\\
+    \vspace{1cm}
+    
+    December 18, 2025
+    }
+    
+    \vfill
+\end{titlepage}
+
+% Abstract
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This report presents the design, implementation, and analysis of a domestic mobile robot capable of autonomous navigation in indoor environments. The project encompasses the complete robotics pipeline from simulation and sensor integration through to autonomous patrol execution and performance analysis.
+
+The robot system, named \texttt{rudimentary\_bot}, was developed using ROS 2 Jazzy and Gazebo Harmonic simulation. A custom differential drive robot was designed with an integrated 2D LIDAR sensor and IMU for localization and obstacle detection. The implementation progressed through six distinct phases: (1) robot design and simulation setup, (2) LIDAR processing and sensor validation, (3) SLAM-based mapping using SLAM Toolbox, (4) navigation stack configuration with Nav2 and AMCL localization, (5) autonomous patrol system development, and (6) comprehensive performance analysis through data playback and trajectory comparison.
+
+Key technical challenges addressed include: LIDAR false detection mitigation through mechanical design (front caster wheel addition), QoS profile configuration for reliable sensor data streaming, AMCL particle filter tuning for stable localization, transform frame management across the map-odom-base\_link hierarchy, and lifecycle node activation in Nav2. The project demonstrates proficiency in state-of-the-art mobile robotics frameworks including Extended Kalman Filtering for sensor fusion, graph-based SLAM for environment mapping, Monte Carlo localization for pose estimation, and hierarchical path planning and control.
+
+Performance analysis reveals successful navigation across multiple waypoints with measurable localization drift characteristics. The map-odom transform exhibits jitter under wheel slip conditions, highlighting the fundamental limitations of dead-reckoning approaches and validating the need for continued research in robust localization methods.
+
+This work provides a comprehensive foundation for domestic service robot development and demonstrates the integration of modern ROS 2 tools for autonomous mobile robotics applications.
+
+\textbf{Keywords:} Mobile Robotics, ROS 2, Nav2, SLAM, AMCL, EKF, Autonomous Navigation, Differential Drive, Particle Filter
+
+\clearpage
+
+% Table of Contents
+\tableofcontents
+\clearpage
+
+% List of Figures
+\listoffigures
+\clearpage
+
+% List of Tables
+\listoftables
+\clearpage
+
+% Nomenclature
+\printnomenclature
+\clearpage
+
+% Nomenclature entries
+\nomenclature{\rostwo}{Robot Operating System 2}
+\nomenclature{\navtwo}{Navigation 2 Stack}
+\nomenclature{\slam}{Simultaneous Localization and Mapping}
+\nomenclature{\amcl}{Adaptive Monte Carlo Localization}
+\nomenclature{\mcl}{Monte Carlo Localization}
+\nomenclature{\ekf}{Extended Kalman Filter}
+\nomenclature{\lidar}{Light Detection and Ranging}
+\nomenclature{\imu}{Inertial Measurement Unit}
+\nomenclature{\urdf}{Unified Robot Description Format}
+\nomenclature{\xacro}{XML Macros for URDF}
+\nomenclature{\tf}{Transform Library}
+\nomenclature{\qos}{Quality of Service}
+\nomenclature{\yaml}{YAML Ain't Markup Language}
+\nomenclature{DWA}{Dynamic Window Approach}
+\nomenclature{ICP}{Iterative Closest Point}
+\nomenclature{DOF}{Degrees of Freedom}
+\nomenclature{GUI}{Graphical User Interface}
+\nomenclature{SDF}{Simulation Description Format}
+
+% ==========================================
+% MAIN CONTENT
+% ==========================================
+
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Project Context and Motivation}
+
+Domestic mobile robots represent a rapidly growing application domain in robotics, with autonomous vacuum cleaners, delivery robots, and service assistants becoming increasingly prevalent in homes and commercial spaces. These robots must navigate complex, dynamic environments while avoiding obstacles, localizing themselves accurately, and executing goal-directed behaviors reliably.
+
+This final project was undertaken as part of the Autonomous Mobile Robot course (2025-2026/2025-1-2943) instructed by Dr. Rusman Rusyadi at Swiss German University. The project requirements encompassed topics from exercises 1--4 and ROS tutorials 1--10, requiring demonstration of knowledge and skills in \rostwo, sensor processing, state estimation, mapping, and autonomous navigation.
+
+\section{Course Requirements and Academic Context}
+
+The project was required to cover:
+\begin{itemize}
+    \item Custom robot design and simulation in Gazebo
+    \item Sensor integration (LIDAR, IMU, wheel encoders)
+    \item State estimation using sensor fusion
+    \item Map building using SLAM techniques
+    \item Localization on known maps
+    \item Autonomous navigation with obstacle avoidance
+    \item Data recording and offline analysis
+\end{itemize}
+
+Unlike using pre-built platforms such as TurtleBot 3 or TurtleBot 4, this project emphasized building a robot system from first principles to eliminate ``black box'' complexity and provide deep understanding of the underlying algorithms and system integration challenges.
+
+\section{Project Objectives and Scope}
+
+The overarching objective was to develop a complete autonomous navigation pipeline for a domestic mobile robot capable of:
+
+\begin{enumerate}
+    \item Operating in a simulated indoor house environment
+    \item Building an accurate occupancy grid map through teleoperated exploration
+    \item Localizing itself on the map using particle filter techniques
+    \item Planning collision-free paths to user-specified goal locations
+    \item Executing autonomous patrol missions through predefined waypoints
+    \item Recording and analyzing navigation performance offline
+\end{enumerate}
+
+\subsection{Specific Technical Goals}
+
+\begin{itemize}
+    \item \textbf{Robot Design:} Create a differential drive robot optimized for SLAM with appropriate sensor placement and mechanical stability
+    \item \textbf{Simulation:} Integrate with Gazebo Harmonic and configure realistic physics and sensor models
+    \item \textbf{Sensor Processing:} Implement proper QoS configuration and data validation for LIDAR readings
+    \item \textbf{State Estimation:} Configure and tune Extended Kalman Filter for odometry and IMU fusion
+    \item \textbf{Mapping:} Generate high-quality occupancy grid maps using SLAM Toolbox
+    \item \textbf{Localization:} Tune AMCL parameters for stable, accurate pose estimation
+    \item \textbf{Navigation:} Configure Nav2 stack with appropriate costmaps, planners, and controllers
+    \item \textbf{Autonomy:} Implement waypoint-based patrol system using BasicNavigator API
+    \item \textbf{Analysis:} Develop offline analysis pipeline to evaluate navigation performance
+\end{itemize}
+
+\section{System Overview}
+
+The complete system architecture comprises:
+
+\begin{itemize}
+    \item \textbf{Simulation Layer:} Gazebo Harmonic physics engine with custom SDF world
+    \item \textbf{Robot Layer:} Custom differential drive robot with LIDAR and IMU sensors
+    \item \textbf{Bridge Layer:} \texttt{ros\_gz\_bridge} for Gazebo-ROS topic translation
+    \item \textbf{Perception Layer:} LIDAR processing with QoS-matched subscriptions
+    \item \textbf{Estimation Layer:} EKF sensor fusion (robot\_localization package)
+    \item \textbf{Mapping Layer:} SLAM Toolbox for graph-based SLAM
+    \item \textbf{Localization Layer:} AMCL particle filter for map-based pose estimation
+    \item \textbf{Navigation Layer:} Nav2 stack with global/local planners and controllers
+    \item \textbf{Application Layer:} Autonomous patrol mission executor
+    \item \textbf{Analysis Layer:} Offline playback and trajectory comparison tools
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/setup/setup_rudimentary_robot_no_castor2.png}
+    \caption{The rudimentary\_bot robot in Gazebo simulation showing chassis, wheels, caster wheels, and LIDAR sensor}
+    \label{fig:robot_overview}
+\end{figure}
+
+\section{Development Environment}
+
+The project was developed on:
+\begin{itemize}
+    \item \textbf{Operating System:} Pop!\_OS 24.04 LTS (based on Ubuntu 24.04)
+    \item \textbf{ROS Distribution:} ROS 2 Jazzy Jalisco
+    \item \textbf{Simulator:} Gazebo Harmonic
+    \item \textbf{Hardware:} NVIDIA RTX 3080 GPU (requiring special X11/Wayland configuration)
+    \item \textbf{Workspace:} \texttt{\textasciitilde/ros2\_ws} with custom \texttt{exercise\_launch} package
+\end{itemize}
+
+\section{Report Organization}
+
+This report is organized topically rather than chronologically to provide clear conceptual understanding:
+
+\begin{itemize}
+    \item \textbf{Chapter \ref{ch:theory}:} Theoretical foundations of mobile robotics algorithms
+    \item \textbf{Chapter \ref{ch:robot_design}:} Robot mechanical and electrical design
+    \item \textbf{Chapter \ref{ch:architecture}:} Software system architecture
+    \item \textbf{Chapter \ref{ch:lidar}:} LIDAR processing and obstacle detection
+    \item \textbf{Chapter \ref{ch:slam}:} SLAM-based mapping implementation
+    \item \textbf{Chapter \ref{ch:navigation}:} Navigation stack configuration
+    \item \textbf{Chapter \ref{ch:patrol}:} Autonomous patrol system
+    \item \textbf{Chapter \ref{ch:analysis}:} Performance analysis methodology
+    \item \textbf{Chapter \ref{ch:integration}:} System integration and validation
+    \item \textbf{Chapter \ref{ch:lessons}:} Lessons learned and best practices
+    \item \textbf{Chapter \ref{ch:conclusions}:} Conclusions and future work
+\end{itemize}
+
+Appendices provide detailed configuration files, launch file references, and command documentation for reproducibility.
+
+% ==========================================
+% CHAPTER 2: THEORETICAL FOUNDATIONS
+% ==========================================
+
+\chapter{Theoretical Foundations}
+\label{ch:theory}
+
+This chapter presents the mathematical and algorithmic foundations underlying the autonomous navigation system. Understanding these principles is essential for proper system configuration, parameter tuning, and troubleshooting.
+
+\section{Mobile Robot Kinematics}
+
+\subsection{Differential Drive Model}
+
+The \texttt{rudimentary\_bot} uses a differential drive configuration with two independently actuated wheels and passive caster wheels for stability. The kinematic model relates wheel velocities to robot motion in the plane.
+
+Let $v_L$ and $v_R$ denote the linear velocities of the left and right wheels, respectively. The robot's linear velocity $v$ and angular velocity $\omega$ are given by:
+
+\begin{equation}
+v = \frac{v_R + v_L}{2}
+\label{eq:diff_drive_linear}
+\end{equation}
+
+\begin{equation}
+\omega = \frac{v_R - v_L}{L}
+\label{eq:diff_drive_angular}
+\end{equation}
+
+where $L$ is the wheelbase (distance between wheels). For \texttt{rudimentary\_bot}, $L = 0.35$ m.
+
+\subsection{Odometry Integration}
+
+Dead reckoning integrates wheel encoder measurements to estimate pose. Given an initial pose $\state_0 = [x_0, y_0, \theta_0]^\top$ and control inputs over time, the pose at time $t$ is:
+
+\begin{align}
+x(t) &= x_0 + \int_0^t v(\tau) \cos(\theta(\tau)) \, d\tau \\
+y(t) &= y_0 + \int_0^t v(\tau) \sin(\theta(\tau)) \, d\tau \\
+\theta(t) &= \theta_0 + \int_0^t \omega(\tau) \, d\tau
+\end{align}
+
+In discrete time with sampling interval $\Delta t$:
+
+\begin{align}
+x_{k+1} &= x_k + v_k \cos(\theta_k) \Delta t \\
+y_{k+1} &= y_k + v_k \sin(\theta_k) \Delta t \\
+\theta_{k+1} &= \theta_k + \omega_k \Delta t
+\end{align}
+
+\subsection{Error Propagation}
+
+Odometry suffers from systematic and random errors that accumulate unbounded over time:
+
+\begin{itemize}
+    \item \textbf{Systematic errors:} Wheel radius mismatch, wheelbase error, finite encoder resolution
+    \item \textbf{Random errors:} Floor irregularities, wheel slippage, measurement noise
+\end{itemize}
+
+The covariance of pose uncertainty grows approximately linearly with distance traveled, making long-term dead reckoning infeasible for autonomous navigation. This motivates the need for external sensing (LIDAR) and map-based localization.
+
+\section{Sensor Fusion and State Estimation}
+
+\subsection{Extended Kalman Filter Theory}
+
+The Extended Kalman Filter (EKF) provides optimal state estimation for nonlinear systems under Gaussian noise assumptions \cite{welch1995introduction}. It consists of two phases: prediction and update.
+
+\subsubsection{State Representation}
+
+The state vector for mobile robot odometry fusion is:
+\begin{equation}
+\state = [x, y, z, \phi, \theta, \psi, \dot{x}, \dot{y}, \dot{z}, \dot{\phi}, \dot{\theta}, \dot{\psi}, \ddot{x}, \ddot{y}, \ddot{z}]^\top
+\end{equation}
+
+For 2D navigation, $z=0$, $\phi=0$ (roll), $\theta=0$ (pitch), and their derivatives are zero, simplifying to:
+\begin{equation}
+\state = [x, y, \psi, \dot{x}, \dot{y}, \dot{\psi}]^\top
+\end{equation}
+
+where $(x, y)$ is position, $\psi$ is yaw angle, and overdots denote time derivatives.
+
+\subsubsection{Prediction Step}
+
+Given the previous state estimate $\statehat_{k-1|k-1}$ and covariance $\covhat_{k-1|k-1}$, predict the state at time $k$:
+
+\begin{equation}
+\statebar_{k|k-1} = f(\statehat_{k-1|k-1}, \control_k)
+\end{equation}
+
+\begin{equation}
+\covbar_{k|k-1} = \jacobf_k \covhat_{k-1|k-1} \jacobf_k^\top + \jacobg_k \procnoisecov_k \jacobg_k^\top
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $f(\cdot)$ is the nonlinear state transition function
+    \item $\jacobf_k$ is the Jacobian of $f$ with respect to the state
+    \item $\jacobg_k$ is the Jacobian of $f$ with respect to process noise
+    \item $\procnoisecov_k$ is the process noise covariance matrix
+\end{itemize}
+
+\subsubsection{Update Step}
+
+Given a measurement $\meas_k$, compute the innovation:
+\begin{equation}
+\tilde{\meas}_k = \meas_k - h(\statebar_{k|k-1})
+\end{equation}
+
+where $h(\cdot)$ is the nonlinear measurement function. The Kalman gain is:
+\begin{equation}
+\kalmangain_k = \covbar_{k|k-1} \jacobh_k^\top (\jacobh_k \covbar_{k|k-1} \jacobh_k^\top + \measnoisecov_k)^{-1}
+\end{equation}
+
+where $\jacobh_k$ is the Jacobian of $h$ and $\measnoisecov_k$ is the measurement noise covariance.
+
+The corrected state estimate and covariance are:
+\begin{align}
+\statehat_{k|k} &= \statebar_{k|k-1} + \kalmangain_k \tilde{\meas}_k \\
+\covhat_{k|k} &= (\identity - \kalmangain_k \jacobh_k) \covbar_{k|k-1}
+\end{align}
+
+\subsection{Implementation in robot\_localization}
+
+The \texttt{robot\_localization} package implements the EKF for ROS 2 \cite{moore2014generalized,robotlocalization}. Key configuration parameters include:
+
+\begin{itemize}
+    \item \textbf{frequency:} Filter update rate (5 Hz in this project)
+    \item \textbf{sensor\_timeout:} Maximum age for sensor measurements (0.2 s)
+    \item \textbf{two\_d\_mode:} Constraint to planar motion
+    \item \textbf{publish\_tf:} Whether to publish \texttt{odom $\rightarrow$ base\_link} transform
+\end{itemize}
+
+For each sensor (odometry, IMU), a configuration vector specifies which state variables to fuse:
+\begin{lstlisting}[language=yaml]
+odom0_config: [true, true, false,     # x, y, z
+               false, false, true,    # roll, pitch, yaw
+               true, true, false,     # vx, vy, vz
+               false, false, true,    # vroll, vpitch, vyaw
+               false, false, false]   # ax, ay, az
+\end{lstlisting}
+
+\section{Simultaneous Localization and Mapping (SLAM)}
+
+\subsection{SLAM Problem Formulation}
+
+SLAM addresses the chicken-and-egg problem: to localize, a robot needs a map; to build a map, it needs to know its location. Formally, SLAM estimates the joint posterior:
+\begin{equation}
+P(\state_{0:t}, m \mid \meas_{0:t}, \control_{0:t})
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\state_{0:t}$ is the trajectory of robot poses
+    \item $m$ is the map
+    \item $\meas_{0:t}$ are sensor measurements (LIDAR scans)
+    \item $\control_{0:t}$ are control inputs (odometry)
+\end{itemize}
+
+\subsection{Graph-Based SLAM}
+
+Modern SLAM systems formulate the problem as graph optimization \cite{grisetti2007improved,konolige2010efficient}. Nodes represent robot poses, and edges represent spatial constraints from odometry or scan matching.
+
+The maximum a posteriori (MAP) estimate is obtained by minimizing:
+\begin{equation}
+\state^* = \argmin_\state \sum_{(i,j) \in \mathcal{E}} e_{ij}(\state_i, \state_j)^\top \Omega_{ij} e_{ij}(\state_i, \state_j)
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $e_{ij}$ is the error between poses $\state_i$ and $\state_j$
+    \item $\Omega_{ij}$ is the information matrix (inverse covariance)
+    \item $\mathcal{E}$ is the set of edges (constraints)
+\end{itemize}
+
+\subsection{Scan Matching}
+
+Scan matching aligns consecutive LIDAR scans to estimate inter-frame motion. Two primary approaches are:
+
+\subsubsection{Iterative Closest Point (ICP)}
+
+ICP minimizes point-to-point distances \cite{besl1992method}:
+\begin{equation}
+(\rotmat^*, \transvec^*) = \argmin_{(\rotmat, \transvec)} \sum_{i=1}^{N} \| \mathbf{p}_i^{\text{target}} - (\rotmat \mathbf{p}_i^{\text{source}} + \transvec) \|^2
+\end{equation}
+
+where $\mathbf{p}_i$ are scan points and $(\rotmat, \transvec)$ is the rigid transformation.
+
+\subsubsection{Correlative Scan Matching}
+
+Correlative methods evaluate the correlation between scans over a discretized search space of possible transformations \cite{olson2009real}. This is more robust to large initial displacement errors but computationally intensive.
+
+\subsection{Loop Closure Detection}
+
+Loop closures occur when the robot revisits previously mapped locations. Detecting and incorporating loop closures prevents unbounded drift in large environments.
+
+SLAM Toolbox uses:
+\begin{itemize}
+    \item Scan-to-scan matching for local consistency
+    \item Pose graph optimization for global consistency
+    \item Constraint management to handle loop closures
+\end{itemize}
+
+\subsection{SLAM Toolbox Architecture}
+
+SLAM Toolbox implements the Karto SLAM algorithm with several enhancements:
+\begin{itemize}
+    \item Asynchronous processing for real-time performance
+    \item Sparse pose adjustment for computational efficiency
+    \item Interactive map manipulation tools
+    \item Serialization for map saving/loading
+\end{itemize}
+
+Key parameters:
+\begin{itemize}
+    \item \textbf{minimum\_travel\_distance:} Minimum robot motion to add a new node (0.01 m)
+    \item \textbf{minimum\_travel\_heading:} Minimum rotation to add a new node (0.01 rad)
+    \item \textbf{scan\_buffer\_size:} Number of scans to buffer (10)
+    \item \textbf{map\_update\_interval:} Frequency of map publication (1.0 s)
+\end{itemize}
+
+\section{Localization on Known Maps}
+
+\subsection{Monte Carlo Localization}
+
+Monte Carlo Localization (MCL) represents the robot's belief as a set of weighted particles, each representing a hypothesis about the robot's pose \cite{dellaert1999monte,thrun2002probabilistic}.
+
+\subsubsection{Particle Filter Algorithm}
+
+The basic MCL algorithm proceeds as follows:
+
+\begin{algorithm}[H]
+\caption{Monte Carlo Localization}
+\label{alg:mcl}
+\KwInput{Previous particle set $X_{t-1}$, control $\control_t$, observation $\meas_t$}
+\KwOutput{Updated particle set $X_t$}
+$\bar{X}_t \gets \emptyset$\\
+\For{$m = 1$ to $M$}{
+    Sample $\state_t^{[m]} \sim p(\state_t \mid \control_t, \state_{t-1}^{[m]})$ \tcp{Prediction}
+    $w_t^{[m]} \gets p(\meas_t \mid \state_t^{[m]}, m)$ \tcp{Measurement update}
+    $\bar{X}_t \gets \bar{X}_t \cup \langle \state_t^{[m]}, w_t^{[m]} \rangle$
+}
+\For{$m = 1$ to $M$}{
+    Draw $i$ with probability $\propto w_t^{[i]}$ \tcp{Resampling}
+    Add $\state_t^{[i]}$ to $X_t$
+}
+\Return{$X_t$}
+\end{algorithm}
+
+\subsection{Adaptive Monte Carlo Localization}
+
+AMCL extends MCL with adaptive particle count based on the KLD-sampling criterion \cite{fox2003adapting}. The number of particles adjusts dynamically based on pose uncertainty.
+
+\subsubsection{Motion Model}
+
+The odometry motion model captures uncertainty in robot motion:
+\begin{equation}
+p(\state' \mid \control, \state) = \gaussian{\state'}{\bar{\state}, \Sigma_\control}
+\end{equation}
+
+where $\bar{\state} = g(\state, \control)$ is the deterministic motion and $\Sigma_\control$ depends on parameters $\alpha_1, \ldots, \alpha_5$:
+
+\begin{itemize}
+    \item $\alpha_1, \alpha_2$: Rotational noise from rotation
+    \item $\alpha_3, \alpha_4$: Translational noise from translation
+    \item $\alpha_5$: Translational noise from rotation (strafe)
+\end{itemize}
+
+Lower $\alpha$ values indicate more trust in odometry; higher values allow larger particle spread.
+
+\subsubsection{Sensor Model: Likelihood Field}
+
+The likelihood field model evaluates scan likelihood by comparing each beam to the closest obstacle in the map:
+\begin{equation}
+p(\meas \mid \state, m) = \prod_{i=1}^K p(z_i \mid \state, m)
+\end{equation}
+
+For each beam $z_i$:
+\begin{equation}
+p(z_i \mid \state, m) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{d_i^2}{2\sigma^2}\right) + \frac{\lambda}{z_{\max}}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $d_i$ is the distance from expected to actual beam endpoint
+    \item $\sigma$ is the sensor noise standard deviation
+    \item $\lambda$ is the probability of random measurements
+    \item $z_{\max}$ is the maximum sensor range
+\end{itemize}
+
+\subsubsection{AMCL Parameter Tuning}
+
+Critical parameters in AMCL configuration:
+
+\begin{table}[htbp]
+\centering
+\caption{Key AMCL parameters and their effects}
+\label{tab:amcl_params}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Effect} \\
+\midrule
+\texttt{min\_particles} & 1000 & Lower bound on particle count \\
+\texttt{max\_particles} & 3000 & Upper bound on particle count \\
+\texttt{alpha1--alpha5} & 0.2 & Motion model noise (lower = trust odom more) \\
+\texttt{update\_min\_d} & 0.1 m & Min translation before update \\
+\texttt{update\_min\_a} & 0.1 rad & Min rotation before update \\
+\texttt{laser\_max\_beams} & 60 & Beams used for likelihood (fewer = faster) \\
+\texttt{laser\_likelihood\_max\_dist} & 2.0 m & Max distance for likelihood field \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Path Planning and Navigation}
+
+\subsection{Configuration Space}
+
+The configuration space (C-space) represents all possible robot configurations. For a 2D mobile robot, C-space is typically $\mathbb{R}^2 \times SO(2)$ (position and orientation). Obstacles in workspace map to C-obstacles in configuration space.
+
+To account for robot geometry, the workspace obstacles are inflated by the robot's radius, creating an expanded obstacle region.
+
+\subsection{Costmaps}
+
+Nav2 uses layered costmaps to represent traversability:
+
+\begin{itemize}
+    \item \textbf{Static layer:} Obstacles from the map
+    \item \textbf{Obstacle layer:} Dynamic obstacles from sensor data
+    \item \textbf{Inflation layer:} Continuous cost decay from obstacles
+\end{itemize}
+
+The inflation layer assigns costs based on distance from obstacles:
+\begin{equation}
+\text{cost}(d) = \begin{cases}
+254 & \text{if } d < r_{\text{robot}} \\
+\exp\left(-\frac{s \cdot (d - r_{\text{robot}})}{r_{\text{inflation}} - r_{\text{robot}}}\right) & \text{if } r_{\text{robot}} \leq d < r_{\text{inflation}} \\
+0 & \text{if } d \geq r_{\text{inflation}}
+\end{cases}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $r_{\text{robot}}$ is the robot radius (0.25 m)
+    \item $r_{\text{inflation}}$ is the inflation radius (0.45 m)
+    \item $s$ is the cost scaling factor (5.0)
+\end{itemize}
+
+\subsection{Global Planning}
+
+\subsubsection{A* Algorithm}
+
+A* is an informed search algorithm that finds optimal paths by minimizing \cite{hart1968formal}:
+\begin{equation}
+f(n) = g(n) + h(n)
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $g(n)$ is the cost from start to node $n$
+    \item $h(n)$ is the heuristic cost from $n$ to goal (typically Euclidean distance)
+    \item $f(n)$ is the estimated total cost through $n$
+\end{itemize}
+
+Nav2's NavFn planner uses Dijkstra's algorithm \cite{dijkstra1959note} (A* with $h=0$) on the costmap grid.
+
+\subsection{Local Planning and Control}
+
+\subsubsection{Regulated Pure Pursuit Controller}
+
+Pure pursuit is a geometric path tracking algorithm \cite{coulter1992implementation}. The robot steers toward a lookahead point on the reference path:
+\begin{equation}
+\kappa = \frac{2 \sin(\alpha)}{L_d}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\kappa$ is the commanded curvature
+    \item $\alpha$ is the angle to the lookahead point
+    \item $L_d$ is the lookahead distance
+\end{itemize}
+
+The Regulated Pure Pursuit variant adds:
+\begin{itemize}
+    \item Velocity regulation based on curvature
+    \item Cost-aware path tracking
+    \item Collision detection and slowing
+    \item Goal approach behavior
+\end{itemize}
+
+Linear velocity is regulated by:
+\begin{equation}
+v = v_{\max} \cdot \frac{1}{1 + k_\kappa |\kappa|}
+\end{equation}
+
+where $k_\kappa$ is a gain parameter.
+
+\subsection{Behavior Trees}
+
+Nav2 uses behavior trees for high-level decision making. A behavior tree is a hierarchical structure of:
+\begin{itemize}
+    \item \textbf{Action nodes:} Execute behaviors (e.g., compute path, follow path)
+    \item \textbf{Condition nodes:} Check predicates (e.g., goal reached, stuck)
+    \item \textbf{Control nodes:} Orchestrate execution (sequence, fallback, parallel)
+\end{itemize}
+
+The default Navigate To Pose behavior tree:
+\begin{enumerate}
+    \item Compute path from current pose to goal
+    \item Follow the path with local controller
+    \item If path blocked, replan
+    \item If stuck, execute recovery behavior
+    \item Repeat until goal reached or failure
+\end{enumerate}
+
+\section{Transform Frames and Coordinate Systems}
+
+\subsection{ROS 2 TF2 System}
+
+The Transform library (TF2) manages coordinate frame relationships. Each frame has a parent frame, forming a tree structure.
+
+\subsection{Standard Frame Hierarchy}
+
+For mobile robots, the standard frame hierarchy is:
+\begin{equation}
+\text{map} \xrightarrow{\text{AMCL}} \text{odom} \xrightarrow{\text{EKF}} \text{base\_link} \xrightarrow{\text{static}} \text{sensors}
+\end{equation}
+
+\begin{itemize}
+    \item \textbf{map:} Fixed world frame, origin of the map
+    \item \textbf{odom:} Continuous but drifting odometry frame
+    \item \textbf{base\_link:} Robot body frame (center)
+    \item \textbf{laser\_link:} LIDAR sensor frame
+    \item \textbf{imu\_link:} IMU sensor frame
+\end{itemize}
+
+\subsection{Transform Authority}
+
+Each transform must have exactly one publisher:
+\begin{itemize}
+    \item \textbf{map $\rightarrow$ odom:} Published by AMCL (or SLAM during mapping)
+    \item \textbf{odom $\rightarrow$ base\_link:} Published by EKF (fusing odom + IMU)
+    \item \textbf{base\_link $\rightarrow$ sensors:} Published by robot\_state\_publisher (from URDF)
+\end{itemize}
+
+Multiple publishers for the same transform cause conflicts and instability.
+
+\subsection{Time Synchronization}
+
+Transforms are time-stamped. TF2 can interpolate or extrapolate transforms within configurable bounds:
+\begin{itemize}
+    \item \textbf{cache\_time:} How long to buffer transforms (default 10 s)
+    \item \textbf{transform\_tolerance:} Maximum extrapolation into future (default 0.1 s)
+\end{itemize}
+
+Message filters use TF2 to transform sensor data into appropriate frames for processing.
+
+\section{Summary}
+
+This chapter presented the theoretical foundations for:
+\begin{itemize}
+    \item Differential drive kinematics and odometry integration
+    \item Extended Kalman Filtering for sensor fusion
+    \item Graph-based SLAM and scan matching
+    \item Particle filter localization (AMCL)
+    \item Path planning with A* and costmaps
+    \item Path following with regulated pure pursuit
+    \item Transform frame management with TF2
+\end{itemize}
+
+These principles inform the implementation choices and parameter tuning described in subsequent chapters. Understanding the underlying mathematics is crucial for diagnosing issues and achieving robust autonomous navigation.
+
+% ==========================================
+% CHAPTER 3: ROBOT DESIGN AND SIMULATION
+% ==========================================
+
+\chapter{Robot Design and Simulation}
+\label{ch:robot_design}
+
+This chapter describes the mechanical and electrical design of the \texttt{rudimentary\_bot} custom mobile robot platform, its integration with Gazebo Harmonic simulation, and the rationale behind key design decisions.
+
+\section{Robot Mechanical Design}
+
+\subsection{Design Philosophy}
+
+The robot was designed as a ``minimum viable platform'' for SLAM and navigation research with the following goals:
+\begin{itemize}
+    \item Simple geometry for predictable kinematics
+    \item Adequate sensor suite for indoor navigation
+    \item Mechanical stability to prevent pitch during acceleration/braking
+    \item Compatibility with standard ROS 2 navigation tools
+    \item Easy modification and parameter tuning
+\end{itemize}
+
+Unlike commercial platforms like TurtleBot 4, every aspect of \texttt{rudimentary\_bot} was explicitly designed and documented, eliminating ``black box'' complexity.
+
+\subsection{Chassis Geometry}
+
+The chassis is a rectangular box with dimensions:
+\begin{itemize}
+    \item \textbf{Length:} 0.5 m
+    \item \textbf{Width:} 0.3 m  
+    \item \textbf{Height:} 0.15 m (final design after Phase 2 iterations)
+\end{itemize}
+
+The box geometry was chosen for:
+\begin{enumerate}
+    \item Simple collision checking in costmaps
+    \item Easy visualization and debugging
+    \item Straightforward inertial property calculation
+    \item Adequate internal volume for notional sensor/compute payloads
+\end{enumerate}
+
+The chassis center is positioned at $z = 0.15$ m relative to \texttt{base\_link}, placing the chassis from $z = 0.075$ to $z = 0.225$ m. This positioning ensures wheel axles ($z = 0.1$ m) are within the chassis volume.
+
+\subsection{Differential Drive Configuration}
+
+Two independently actuated wheels provide differential drive:
+
+\begin{table}[htbp]
+\centering
+\caption{Wheel specifications}
+\label{tab:wheel_specs}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Wheel radius & 0.1 m \\
+Wheel width & 0.05 m \\
+Wheelbase (separation) & 0.35 m \\
+Wheel position (z) & 0.1 m \\
+Material & Light gray (visual) \\
+Joint type & Continuous rotation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The wheelbase of 0.35 m provides adequate turning radius while maintaining stability. Wheel radius of 0.1 m keeps the robot low to the ground for stability.
+
+\subsection{Caster Wheels for Stability}
+
+\subsubsection{Initial Design Problem}
+
+The original design included only a rear caster wheel. During Phase 3 testing, a critical stability issue emerged: when the robot braked suddenly, forward momentum caused the chassis to pitch forward, tilting the LIDAR sensor downward. The tilted LIDAR detected the ground plane instead of obstacles, creating false wall detections that severely disrupted SLAM.
+
+\subsubsection{Solution: Dual Caster Design}
+
+The final design includes two caster wheels:
+
+\begin{itemize}
+    \item \textbf{Rear caster:} Located at $(-0.2, 0, 0.05)$ m relative to \texttt{base\_link}
+    \item \textbf{Front caster:} Located at $(0.25, 0, 0.05)$ m relative to \texttt{base\_link}
+\end{itemize}
+
+Both casters are spherical with 0.05 m radius. The front caster prevents forward pitch during braking, keeping the LIDAR parallel to the ground plane. This modification completely eliminated false ground detections.
+
+\begin{keypoint}
+Adding a front caster wheel was the single most impactful mechanical design change. It solved the false wall detection problem that had persisted through multiple LIDAR height and minimum range adjustments. This highlights the importance of considering robot dynamics, not just static geometry.
+\end{keypoint}
+
+\section{Sensor Suite}
+
+\subsection{2D LIDAR Sensor}
+
+The robot is equipped with a simulated 2D LIDAR providing 360° planar range measurements.
+
+\begin{table}[htbp]
+\centering
+\caption{LIDAR sensor specifications}
+\label{tab:lidar_specs}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value / Description} \\
+\midrule
+Sensor type & \texttt{gpu\_lidar} (Gazebo Harmonic) \\
+Angular range & $-180°$ to $+180°$ (360° total) \\
+Angular resolution & 1° (360 beams) \\
+Range (minimum) & 0.4 m (final tuning) \\
+Range (maximum) & 10.0 m \\
+Range resolution & 0.01 m \\
+Update rate & 10 Hz \\
+Topic & \topic{scan} \\
+Frame ID & \texttt{laser\_link} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{LIDAR Placement Evolution}
+
+LIDAR positioning underwent significant iteration during development:
+
+\begin{enumerate}
+    \item \textbf{Initial position:} $(0.25, 0, 0.1)$ m - Forward and low, caused self-occlusion
+    \item \textbf{Second iteration:} $(0.2, 0, 0.15)$ m - Slightly higher, still occluded when turning
+    \item \textbf{Third iteration:} $(0, 0, 0.25)$ m - Centered and raised, still too low after dual-caster addition
+    \item \textbf{Fourth iteration:} $(0, 0, 0.5)$ m - Very high, excessive clearance
+    \item \textbf{Final position:} $(0, 0, 0.25)$ m - Centered, adequate clearance with front caster preventing pitch
+\end{enumerate}
+
+The final centered position at $(0, 0, 0.25)$ m places the LIDAR:
+\begin{itemize}
+    \item Above the chassis top (which extends to $z = 0.225$ m)
+    \item With $\sim$0.025 m clearance from chassis
+    \item 0.15 m above wheel axles
+    \item Symmetrically positioned for uniform coverage
+\end{itemize}
+
+\subsubsection{Minimum Range Tuning}
+
+The LIDAR minimum range was progressively increased to prevent self-detection:
+\begin{itemize}
+    \item Initial: 0.1 m (detected robot body)
+    \item First increase: 0.15 m (still detected wheels when turning)
+    \item Second increase: 0.3 m (reduced self-detection significantly)
+    \item Third increase: 0.35 m (further improvement)
+    \item Final: 0.4 m (complete elimination of self-detection)
+\end{itemize}
+
+The 0.4 m minimum range is justified by geometry:
+\begin{itemize}
+    \item Chassis corners are $\sqrt{0.25^2 + 0.15^2} \approx 0.29$ m from center
+    \item Wheels extend $\approx 0.275$ m from center
+    \item 0.4 m provides comfortable margin
+\end{itemize}
+
+\subsection{IMU Sensor}
+
+An IMU provides angular velocity and linear acceleration measurements for EKF fusion:
+
+\begin{table}[htbp]
+\centering
+\caption{IMU sensor specifications}
+\label{tab:imu_specs}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value / Description} \\
+\midrule
+Sensor type & 6-DOF IMU (3-axis gyro + 3-axis accel) \\
+Update rate & 100 Hz \\
+Topic & \topic{imu} \\
+Frame ID & \texttt{imu\_link} \\
+Position & $(0, 0, 0.15)$ m (centered in chassis) \\
+Angular velocity noise & $\sigma = 0.0002$ rad/s \\
+Linear accel noise & $\sigma = 0.017$ m/s² \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The IMU is centered in the chassis to minimize measurement errors from off-center rotation.
+
+\subsection{Wheel Encoders}
+
+Wheel odometry is provided by the Gazebo diff\_drive plugin, which simulates perfect encoders with configurable noise. The plugin publishes to \topic{odom} with odometry messages in the \texttt{odom} frame.
+
+Critically, the diff\_drive plugin is configured with \texttt{publish\_odom\_tf: false}. This prevents the plugin from publishing the \texttt{odom $\rightarrow$ base\_link} transform, leaving that responsibility to the EKF. This design choice is essential for proper sensor fusion and SLAM integration.
+
+\section{Simulation Environment}
+
+\subsection{Gazebo Harmonic Integration}
+
+Gazebo Harmonic (formerly Ignition Gazebo) provides the physics simulation. Key features utilized:
+
+\begin{itemize}
+    \item \textbf{Realistic physics:} ODE physics engine with configurable time step
+    \item \textbf{Sensor simulation:} GPU-accelerated LIDAR, IMU dynamics
+    \item \textbf{Differential drive:} Wheel joint control with friction modeling
+    \item \textbf{Collision detection:} For bump sensors and ground contact
+\end{itemize}
+
+\subsection{Home World Description}
+
+The simulated environment is the ``home'' world from the MOGI-ROS repository, representing a multi-room house:
+
+\begin{itemize}
+    \item Multiple rooms (living room, kitchen, bedroom)
+    \item Doorways ($\sim$0.9 m wide)
+    \item Furniture (tables, shelves)
+    \item Walls and corridors
+    \item Flat ground plane
+\end{itemize}
+
+This environment provides realistic challenges for SLAM and navigation:
+\begin{itemize}
+    \item Narrow passages requiring precise navigation
+    \item Multiple loop closure opportunities
+    \item Featureless areas (long corridors) testing localization robustness
+    \item Furniture providing distinctive scan features
+\end{itemize}
+
+\subsection{World Modification}
+
+The original \texttt{home.sdf} file referenced external mesh and texture assets not available in the workspace. These were replaced with simple geometric primitives:
+
+\begin{itemize}
+    \item Dumpster mesh $\rightarrow$ Box (1.5 m × 1.0 m × 1.0 m)
+    \item Fire hydrant mesh $\rightarrow$ Cylinder (r=0.15 m, h=0.8 m)
+    \item Cardboard box meshes $\rightarrow$ Boxes (0.5 m × 0.4 m × 0.3 m)
+    \item All texture URIs removed
+\end{itemize}
+
+This simplification had no impact on SLAM or navigation performance, as LIDAR-based systems only perceive obstacle geometry, not visual appearance.
+
+\subsection{Bridge Architecture}
+
+Communication between Gazebo and ROS 2 uses \texttt{ros\_gz\_bridge} with a YAML parameter file specifying topic mappings:
+
+\begin{lstlisting}[language=yaml,caption={Bridge configuration (gz\_bridge.yaml)},label={lst:bridge_config}]
+- ros_topic_name: "cmd_vel"
+  gz_topic_name: "cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: "ROS_TO_GZ"
+
+- ros_topic_name: "odom"
+  gz_topic_name: "odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: "GZ_TO_ROS"
+
+- ros_topic_name: "scan"
+  gz_topic_name: "scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: "GZ_TO_ROS"
+
+- ros_topic_name: "imu"
+  gz_topic_name: "imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: "GZ_TO_ROS"
+
+- ros_topic_name: "clock"
+  gz_topic_name: "clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: "GZ_TO_ROS"
+\end{lstlisting}
+
+The \topic{clock} bridge is essential for simulation time synchronization when running with \texttt{use\_sim\_time: true}.
+
+\section{URDF/Xacro Implementation}
+
+\subsection{Robot Model Structure}
+
+The URDF (Unified Robot Description Format) with Xacro macros defines the robot structure in \texttt{rudimentary\_bot.urdf.xacro}.
+
+\subsubsection{Link Hierarchy}
+
+\begin{itemize}
+    \item \textbf{base\_link:} Root link, robot body center
+    \begin{itemize}
+        \item \textbf{left\_wheel:} Continuous joint at $(0, 0.175, 0.1)$
+        \item \textbf{right\_wheel:} Continuous joint at $(0, -0.175, 0.1)$
+        \item \textbf{caster\_wheel:} Fixed joint at $(-0.2, 0, 0.05)$
+        \item \textbf{front\_caster\_wheel:} Fixed joint at $(0.25, 0, 0.05)$
+        \item \textbf{laser\_link:} Fixed joint at $(0, 0, 0.25)$
+        \item \textbf{imu\_link:} Fixed joint at $(0, 0, 0.15)$
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Inertial Properties}
+
+All links include proper inertial properties for physics simulation:
+
+\begin{lstlisting}[language=xml,caption={Example inertial properties for chassis},label={lst:inertial}]
+<inertial>
+  <mass value="10.0"/>
+  <inertia ixx="0.1" ixy="0.0" ixz="0.0"
+           iyy="0.2" iyz="0.0"
+           izz="0.25"/>
+</inertial>
+\end{lstlisting}
+
+Caster wheels have low mass (0.5 kg) to minimize their impact on dynamics.
+
+\subsection{Gazebo Plugins}
+
+\subsubsection{Differential Drive Plugin}
+
+\begin{lstlisting}[language=xml,caption={Diff drive plugin configuration},label={lst:diff_drive}]
+<plugin filename="gz-sim-diff-drive-system" 
+        name="gz::sim::systems::DiffDrive">
+  <left_joint>left_wheel_joint</left_joint>
+  <right_joint>right_wheel_joint</right_joint>
+  <wheel_separation>0.35</wheel_separation>
+  <wheel_radius>0.1</wheel_radius>
+  <odom_publish_frequency>50</odom_publish_frequency>
+  <topic>cmd_vel</topic>
+  <odom_topic>odom</odom_topic>
+  <publish_odom>true</publish_odom>
+  <publish_odom_tf>false</publish_odom_tf>
+  <frame_id>odom</frame_id>
+  <child_frame_id>base_link</child_frame_id>
+  <max_linear_velocity>0.5</max_linear_velocity>
+  <max_angular_velocity>1.0</max_angular_velocity>
+</plugin>
+\end{lstlisting}
+
+Key parameter: \texttt{publish\_odom\_tf: false} ensures EKF has sole authority over the \texttt{odom $\rightarrow$ base\_link} transform.
+
+\subsubsection{LIDAR Plugin}
+
+\begin{lstlisting}[language=xml,caption={LIDAR sensor plugin},label={lst:lidar_plugin}]
+<sensor name="gpu_lidar" type="gpu_lidar">
+  <pose>0 0 0 0 0 0</pose>
+  <update_rate>10</update_rate>
+  <topic>scan</topic>
+  <gz_frame_id>laser_link</gz_frame_id>
+  <always_on>true</always_on>
+  <visualize>true</visualize>
+  <lidar>
+    <scan>
+      <horizontal>
+        <samples>360</samples>
+        <resolution>1</resolution>
+        <min_angle>-3.14159</min_angle>
+        <max_angle>3.14159</max_angle>
+      </horizontal>
+      <vertical>
+        <samples>1</samples>
+        <min_angle>0</min_angle>
+        <max_angle>0</max_angle>
+      </vertical>
+    </scan>
+    <range>
+      <min>0.4</min>
+      <max>10.0</max>
+      <resolution>0.01</resolution>
+    </range>
+  </lidar>
+</sensor>
+\end{lstlisting}
+
+Critical elements:
+\begin{itemize}
+    \item \texttt{<scan>} wrapper required in Gazebo Harmonic
+    \item \texttt{<vertical>} section required even for 2D LIDAR
+    \item \texttt{<always\_on>true</always\_on>} ensures continuous operation
+\end{itemize}
+
+\subsubsection{IMU Plugin}
+
+The IMU plugin includes Gaussian noise models for both angular velocity and linear acceleration measurements, providing realistic sensor characteristics for EKF tuning.
+
+\section{Summary}
+
+This chapter described the \texttt{rudimentary\_bot} robot design:
+
+\begin{itemize}
+    \item Simple box chassis with differential drive
+    \item Dual caster wheels for pitch stability (critical for SLAM)
+    \item Centered, elevated LIDAR with 0.4 m minimum range
+    \item Centered IMU for accurate motion sensing
+    \item Gazebo Harmonic integration with proper plugins
+    \item URDF structure with \texttt{publish\_odom\_tf: false} for EKF integration
+\end{itemize}
+
+The iterative design process, particularly the addition of the front caster wheel, demonstrates the importance of considering robot dynamics alongside static geometry when designing for navigation applications.
+
+% ==========================================
+% CHAPTER 4: SYSTEM ARCHITECTURE
+% ==========================================
+
+\chapter{System Architecture}
+\label{ch:architecture}
+
+This chapter describes the software architecture, including the ROS 2 package structure, launch system design, and data recording/playback infrastructure.
+
+\section{Software Stack Overview}
+
+The system is built on ROS 2 Jazzy with the following key packages:
+
+\begin{itemize}
+    \item \textbf{exercise\_launch:} Custom package containing all launch files, configurations, and nodes
+    \item \textbf{robot\_localization:} EKF sensor fusion
+    \item \textbf{slam\_toolbox:} Graph-based SLAM
+    \item \textbf{nav2\_*:} Navigation stack (25+ packages)
+    \item \textbf{ros\_gz\_bridge:} Gazebo-ROS communication
+    \item \textbf{robot\_state\_publisher:} TF tree from URDF
+\end{itemize}
+
+\subsection{Package Structure}
+
+The \texttt{exercise\_launch} package (ament\_python) contains:
+\begin{itemize}
+    \item \textbf{launch/:} Launch files for each phase
+    \item \textbf{config/:} YAML parameter files (EKF, SLAM, Nav2)
+    \item \textbf{urdf/:} Robot description files
+    \item \textbf{rviz/:} RViz configuration files
+    \item \textbf{worlds/:} Gazebo SDF world files
+    \item \textbf{scripts/:} Wrapper scripts for environment setup
+    \item \textbf{exercise\_launch/:} Python nodes (lidar\_reader, patrol, analysis)
+\end{itemize}
+
+\section{Launch System Design}
+
+\subsection{Modular Launch Architecture}
+
+The launch system is hierarchical:
+
+\begin{enumerate}
+    \item \textbf{simulation.launch.py:} Base layer (Gazebo, robot, bridge, RSP)
+    \item \textbf{slam.launch.py:} Adds EKF + SLAM Toolbox
+    \item \textbf{navigation.launch.py:} Adds EKF + Nav2 + AMCL
+    \item \textbf{record\_patrol.launch.py:} Adds patrol + bag recording
+    \item \textbf{analyze\_patrol.launch.py:} Playback + analysis nodes
+\end{enumerate}
+
+Each launch file includes the previous layer and adds new functionality.
+
+\subsection{Conditional Node Activation}
+
+The \texttt{simulation.launch.py} accepts \texttt{use\_ekf\_tf} argument:
+\begin{itemize}
+    \item \textbf{false (default):} Static TF publisher for \texttt{odom $\rightarrow$ base\_link} (Phase 2)
+    \item \textbf{true:} EKF publishes the transform (Phases 3+)
+\end{itemize}
+
+This conditional ensures no TF conflicts between static publisher and EKF.
+
+\subsection{Environment Configuration}
+
+Wrapper scripts (\texttt{run\_*.sh}) handle platform-specific setup for Pop!\_OS/NVIDIA/Wayland:
+\begin{lstlisting}[language=bash]
+export QT_QPA_PLATFORM=xcb          # Force X11
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
+export OGRE_RTT_PREFERRED_MODE=FBO
+xhost +local:                       # Allow X11 connections
+\end{lstlisting}
+
+These settings prevent GUI crashes when launching Gazebo and RViz.
+
+\section{Data Recording and Playback}
+
+\subsection{Recording Strategy}
+
+Topics recorded for analysis:
+\begin{itemize}
+    \item \textbf{/odom:} Raw wheel odometry
+    \item \textbf{/imu:} IMU measurements
+    \item \textbf{/scan:} LIDAR data
+    \item \textbf{/tf, /tf\_static:} Transform tree
+    \item \textbf{/robot\_description:} URDF
+    \item \textbf{/joint\_states:} Wheel joint positions
+\end{itemize}
+
+Additional topics recorded during Phase 5-6:
+\begin{itemize}
+    \item \textbf{/odometry/filtered:} EKF output
+    \item \textbf{/amcl\_pose:} Localization estimate
+    \item \textbf{/cmd\_vel:} Velocity commands
+    \item \textbf{/plan:} Global path from planner
+\end{itemize}
+
+\subsection{Playback Architecture}
+
+The \texttt{analyze\_patrol.launch.py} uses simulated time (\texttt{--clock} flag) to synchronize playback with analysis nodes. This ensures:
+\begin{itemize}
+    \item Deterministic replay
+    \item Accurate transform lookups
+    \item Synchronized visualization
+\end{itemize}
+
+\section{Summary}
+
+The modular software architecture enables:
+\begin{itemize}
+    \item Incremental system development (phase-by-phase)
+    \item Reusable components across phases
+    \item Platform-specific environment handling
+    \item Reproducible experiments through bag recording
+\end{itemize}
+
+
+
+
+% ==========================================
+% CHAPTER 5: LIDAR PROCESSING
+% ==========================================
+
+\chapter{LIDAR Processing and Obstacle Detection}
+\label{ch:lidar}
+
+This chapter consolidates Phase 2 implementation, covering LIDAR sensor configuration, QoS matching, false detection mitigation, and data validation.
+
+\section{Sensor Configuration Challenges}
+
+\subsection{Initial LIDAR Configuration Errors}
+
+The first implementation attempt revealed critical configuration errors. All LIDAR ranges returned \texttt{inf} (infinity), indicating no valid detections. Root causes:
+
+\begin{enumerate}
+    \item Missing \texttt{<scan>} wrapper around \texttt{<horizontal>} element
+    \item Missing \texttt{<vertical>} section (required in Gazebo Harmonic)
+    \item Missing \texttt{<always\_on>true</always\_on>} flag
+    \item Missing \texttt{<visualize>true</visualize>} flag
+\end{enumerate}
+
+\begin{troubleshooting}
+\textbf{Lesson:} Gazebo Harmonic has stricter URDF requirements than earlier versions. Always include \texttt{<scan>} wrappers and \texttt{<vertical>} sections even for 2D sensors.
+\end{troubleshooting}
+
+\subsection{QoS Profile Matching}
+
+The LIDAR reader node initially received no data despite the \topic{scan} topic publishing. Diagnosis revealed a QoS mismatch:
+
+\begin{itemize}
+    \item \textbf{Gazebo sensor:} Best Effort reliability (default for sensors)
+    \item \textbf{Initial subscriber:} Reliable reliability (ROS 2 default)
+\end{itemize}
+
+\textbf{Solution:} Configure subscriber with Best Effort QoS:
+
+\begin{lstlisting}[language=Python,caption={QoS configuration for sensor topics}]
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+
+sensor_qos = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10
+)
+
+self.scan_subscriber = self.create_subscription(
+    LaserScan,
+    '/scan',
+    self.scan_callback,
+    sensor_qos  # Critical: must match Gazebo
+)
+\end{lstlisting}
+
+\section{False Detection Mitigation}
+
+\subsection{Ground Plane Detection Problem}
+
+During Phase 3 SLAM testing, false perpendicular walls appeared in front of the robot, especially when braking or spinning. Investigation revealed:
+
+\begin{enumerate}
+    \item Robot pitched forward when braking due to inertia
+    \item Tilted LIDAR pointed downward at ground
+    \item Ground plane detected as wall at minimum range
+    \item SLAM incorporated false walls into map
+\end{enumerate}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{screenshots/lidar/lidar_troubleshooting_false_wall_rviz.png}
+    \caption{False wall detection in RViz: LIDAR detecting ground plane when robot pitched forward}
+    \label{fig:false_wall_rviz}
+\end{figure}
+
+\subsection{Mechanical Solution: Front Caster Wheel}
+
+\textbf{Attempted fixes that failed:}
+\begin{itemize}
+    \item Raising LIDAR higher (0.3m → 0.4m → 0.5m): Reduced but didn't eliminate problem
+    \item Increasing minimum range (0.15m → 0.3m → 0.35m): Partially helped but pitch remained
+    \item Increasing LIDAR update rate to 30Hz: Performance degradation without solving root cause
+\end{itemize}
+
+\textbf{Successful solution:}
+
+Adding a front caster wheel at position $(0.25, 0, 0.05)$ m prevented forward pitch completely. This mechanical solution:
+\begin{itemize}
+    \item Keeps LIDAR parallel to ground during braking
+    \item Eliminates false ground detections entirely
+    \item Allows LIDAR to be positioned lower (z=0.25m final vs 0.5m attempted)
+    \item Improves overall robot stability
+\end{itemize}
+
+\begin{keypoint}
+This was the most impactful design change in the project. It solved a sensor processing problem through mechanical design rather than software filtering, demonstrating the importance of system-level thinking in robotics.
+\end{keypoint}
+
+\subsection{Self-Occlusion Prevention}
+
+Even with the front caster, the LIDAR could detect the robot's own body. Final configuration:
+
+\begin{itemize}
+    \item \textbf{Position:} Centered at (0, 0, 0.25) m
+    \item \textbf{Minimum range:} 0.4 m (chassis corners ~0.29 m from center)
+    \item \textbf{Height clearance:} 0.025 m above chassis top
+\end{itemize}
+
+This configuration completely eliminates self-detection while maintaining adequate environmental sensing.
+
+\section{Data Validation}
+
+The LIDAR reader node performs statistical validation:
+
+\begin{enumerate}
+    \item Classify each reading as valid or invalid (inf, nan, out-of-range)
+    \item Compute statistics: min, max, mean range for valid readings
+    \item Log periodically (configurable frequency)
+    \item Report angle coverage and increment
+\end{enumerate}
+
+Typical performance in the home world:
+\begin{itemize}
+    \item Valid readings: 55-65\% (199/360 typical)
+    \item Invalid readings: 35-45\% (expected for obstacles beyond max range)
+    \item Range statistics: 0.25-3.49 m (within 0.4-10.0 m configured range)
+\end{itemize}
+
+\section{Summary}
+
+Phase 2 established reliable LIDAR processing:
+\begin{itemize}
+    \item Proper Gazebo Harmonic sensor configuration
+    \item QoS profile matching for sensor topics
+    \item Mechanical solution (front caster) for false detection elimination
+    \item Centered, elevated LIDAR position with appropriate minimum range
+    \item Data validation and statistical monitoring
+\end{itemize}
+
+
+% ==========================================
+% CHAPTER 6: SLAM-BASED MAPPING
+% ==========================================
+
+\chapter{Mapping with SLAM Toolbox}
+\label{ch:slam}
+
+This chapter consolidates Phase 3, describing SLAM Toolbox configuration, the mapping procedure, and extensive troubleshooting of lifecycle activation and performance issues.
+
+\section{SLAM Configuration}
+
+\subsection{Parameter Selection}
+
+Key SLAM Toolbox parameters for the home environment:
+
+\begin{table}[htbp]
+\centering
+\caption{Final SLAM Toolbox parameters}
+\label{tab:slam_params}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Rationale} \\
+\midrule
+\texttt{minimum\_travel\_distance} & 0.01 m & Trigger mapping with minimal motion \\
+\texttt{minimum\_travel\_heading} & 0.01 rad & Trigger mapping with minimal rotation \\
+\texttt{map\_update\_interval} & 1.0 s & Fast map visualization updates \\
+\texttt{scan\_queue\_size} & 10 & Buffer for async processing \\
+\texttt{scan\_buffer\_minimum} & 0 & Start immediately \\
+\texttt{use\_scan\_matching} & true & Correct odometry drift \\
+\texttt{laser\_min\_range} & 0.4 m & Match LIDAR configuration \\
+\texttt{laser\_max\_range} & 10.0 m & Match LIDAR configuration \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The very low movement thresholds (1 cm, 0.6°) enable rapid map startup and dense node creation for accurate mapping.
+
+\subsection{EKF Configuration for SLAM}
+
+During SLAM, the EKF must publish the \texttt{odom → base\_link} transform:
+
+\begin{lstlisting}[language=yaml,caption={EKF SLAM configuration}]
+ekf_filter_node:
+  ros__parameters:
+    use_sim_time: true
+    publish_tf: true  # CRITICAL for SLAM
+    frequency: 5.0
+    sensor_timeout: 0.2
+    
+    # Fuse wheel odometry
+    odom0: /odom
+    odom0_config: [true, true, false,    # x, y, z
+                   false, false, true,   # roll, pitch, yaw
+                   true, true, false,    # vx, vy, vz
+                   false, false, true,   # vroll, vpitch, vyaw
+                   false, false, false]  # ax, ay, az
+    
+    # Fuse IMU
+    imu0: /imu
+    imu0_config: [false, false, false,   # x, y, z
+                  false, false, true,    # roll, pitch, yaw
+                  false, false, false,   # vx, vy, vz
+                  false, false, true,    # vroll, vpitch, vyaw
+                  true, true, false]     # ax, ay, az
+\end{lstlisting}
+
+\section{Mapping Procedure}
+
+\subsection{Teleoperation Strategy}
+
+The robot was driven manually using \texttt{teleop\_twist\_keyboard} to explore the environment systematically:
+
+\begin{enumerate}
+    \item Start in living room (spawn location)
+    \item Drive forward to kitchen doorway
+    \item Enter kitchen, circle perimeter
+    \item Return through doorway to living room
+    \item Navigate to bedroom doorway
+    \item Enter bedroom, explore corners
+    \item Return to starting position (loop closure)
+\end{enumerate}
+
+Slow, deliberate motion (linear: 0.2 m/s, angular: 0.3 rad/s) ensured good scan matching.
+
+\subsection{Map Quality Assessment}
+
+The final map characteristics:
+\begin{itemize}
+    \item \textbf{Resolution:} 0.05 m/pixel (5 cm)
+    \item \textbf{Size:} 263 × 265 cells
+    \item \textbf{File size:} 69 KB (PGM) + 131 bytes (YAML metadata)
+    \item \textbf{Features:} All rooms, doorways, and major furniture visible
+    \item \textbf{Loop closure:} Successfully detected and corrected
+\end{itemize}
+
+\section{SLAM Troubleshooting}
+
+\subsection{Issue 1: Map Not Publishing}
+
+Initial symptom: \topic{map} topic existed but no data published.
+
+\textbf{Root cause:} SLAM Toolbox is a \textit{lifecycle node} requiring explicit activation. The node was in \texttt{inactive} state, not subscribing to \topic{scan} or publishing \topic{map}.
+
+\textbf{Solution:} Add Nav2 lifecycle manager to automatically activate SLAM:
+
+\begin{lstlisting}[language=Python]
+slam_lifecycle_manager = Node(
+    package='nav2_lifecycle_manager',
+    executable='lifecycle_manager',
+    name='slam_lifecycle_manager',
+    parameters=[{
+        'use_sim_time': True,
+        'autostart': True,
+        'node_names': ['slam_toolbox']
+    }]
+)
+\end{lstlisting}
+
+\subsection{Issue 2: Configuration Parameter Type Error}
+
+Error message: \texttt{parameter 'map\_start\_pose' has invalid type: Wrong parameter type, parameter is of type double\_array, setting it to string is not allowed}
+
+\textbf{Root cause:} YAML \texttt{null} was interpreted as string \texttt{"null"} instead of actual null value.
+
+\textbf{Solution:} Remove the parameter entirely (commented out), allowing SLAM Toolbox to use default (start at origin).
+
+\subsection{Issue 3: Visibility Mask Blocking Detections}
+
+At one point, all LIDAR ranges became \texttt{inf} again. Investigation revealed leftover XML elements:
+
+\begin{lstlisting}[language=xml]
+<camera>
+  <visibility_mask>0xFFFFFFFF</visibility_mask>
+</camera>
+<gazebo>
+  <visibility_flags>0xFFFFFFFF</visibility_flags>
+</gazebo>
+\end{lstlisting}
+
+These incorrectly configured masks blocked all LIDAR detections.
+
+\textbf{Solution:} Remove both \texttt{<visibility\_mask>} and \texttt{<visibility\_flags>} elements entirely.
+
+\subsection{Issue 4: Performance Degradation}
+
+When LIDAR update rate was increased to 30 Hz, severe performance issues occurred:
+\begin{itemize}
+    \item RViz frame rate dropped to ~5 FPS
+    \item Message filter queue overflows
+    \item Scan messages dropped
+\end{itemize}
+
+\textbf{Solution:} Use \texttt{topic\_tools/throttle} to provide reduced-rate \topic{scan\_throttled} (5 Hz) for RViz while SLAM receives full-rate \topic{scan}:
+
+\begin{lstlisting}[language=Python]
+scan_throttle_node = Node(
+    package='topic_tools',
+    executable='throttle',
+    name='scan_throttle',
+    arguments=['messages', '/scan', '5', '/scan_throttled'],
+    parameters=[{'use_sim_time': True}]
+)
+\end{lstlisting}
+
+\section{Summary}
+
+Phase 3 successfully generated a complete map of the house environment:
+\begin{itemize}
+    \item Proper SLAM Toolbox configuration with low movement thresholds
+    \item EKF publishing \texttt{odom → base\_link} transform
+    \item Lifecycle manager for automatic node activation
+    \item Topic throttling for visualization performance
+    \item Systematic teleoperation for complete coverage
+    \item Map saved to PGM/YAML for navigation phase
+\end{itemize}
+
+The troubleshooting process emphasized the importance of understanding ROS 2 lifecycle nodes and parameter type handling.
+
+
+% ==========================================
+% CHAPTER 7: NAVIGATION STACK
+% ==========================================
+
+\chapter{Navigation Stack Implementation}
+\label{ch:navigation}
+
+This chapter consolidates Phase 4, describing Nav2 configuration, AMCL tuning, costmap setup, controller selection, and extensive troubleshooting of localization stability.
+
+\section{AMCL Localization}
+
+\subsection{Initial Pose Configuration}
+
+To ensure deterministic startup, AMCL is configured with:
+
+\begin{lstlisting}[language=yaml]
+amcl:
+  ros__parameters:
+    set_initial_pose: true
+    initial_pose: {x: 0.0, y: 0.0, yaw: 0.0}
+\end{lstlisting}
+
+This publishes the \texttt{map → odom} transform immediately upon activation, preventing RViz frame errors during startup.
+
+\subsection{Particle Filter Tuning}
+
+Final AMCL parameters after extensive tuning:
+
+\begin{table}[htbp]
+\centering
+\caption{Final AMCL parameters}
+\label{tab:amcl_final}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} \\
+\midrule
+Particle count & \texttt{min\_particles} & 1000 \\
+ & \texttt{max\_particles} & 3000 \\
+\midrule
+Motion model & \texttt{alpha1--alpha5} & 0.2 \\
+\midrule
+Update thresholds & \texttt{update\_min\_d} & 0.1 m \\
+ & \texttt{update\_min\_a} & 0.1 rad \\
+\midrule
+Sensor model & \texttt{laser\_model\_type} & likelihood\_field \\
+ & \texttt{laser\_likelihood\_max\_dist} & 2.0 m \\
+ & \texttt{laser\_min\_range} & 0.4 m \\
+ & \texttt{laser\_max\_range} & 10.0 m \\
+ & \texttt{max\_beams} & 60 \\
+\midrule
+Frame IDs & \texttt{base\_frame\_id} & base\_link \\
+ & \texttt{odom\_frame\_id} & odom \\
+ & \texttt{global\_frame\_id} & map \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key tuning decisions:}
+
+\begin{itemize}
+    \item \textbf{Particle count (1000-3000):} Heavy setting for robustness, at cost of CPU
+    \item \textbf{Alpha parameters (0.2):} Lower than default, trusting odometry more
+    \item \textbf{Update thresholds (0.1):} Frequent updates for better tracking
+    \item \textbf{Max beams (60):} Reduced from 360 for computational efficiency
+\end{itemize}
+
+\section{Costmap Configuration}
+
+\subsection{Global vs Local Costmaps}
+
+\begin{itemize}
+    \item \textbf{Global costmap:} Entire map, updates slowly, used for planning
+    \item \textbf{Local costmap:} Rolling window around robot, updates quickly, used for control
+\end{itemize}
+
+\subsection{Inflation Layer Parameters (Specification Requirements)}
+
+As specified in project requirements:
+
+\begin{itemize}
+    \item \textbf{robot\_radius:} 0.25 m
+    \item \textbf{inflation\_radius:} 0.45 m (clearance for 0.9 m doorways)
+    \item \textbf{cost\_scaling\_factor:} 5.0
+\end{itemize}
+
+The 0.45 m inflation radius ensures the robot can safely navigate through doorways while maintaining margin.
+
+\section{Path Planning}
+
+The NavFn planner uses Dijkstra's algorithm on the global costmap. Configuration:
+
+\begin{lstlisting}[language=yaml]
+planner_server:
+  ros__parameters:
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5
+      use_astar: false  # Use Dijkstra
+\end{lstlisting}
+
+\section{Controller Configuration}
+
+\subsection{Regulated Pure Pursuit (Specification Requirement)}
+
+The project specified using Regulated Pure Pursuit Controller:
+
+\begin{lstlisting}[language=yaml]
+controller_server:
+  ros__parameters:
+    controller_plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      lookahead_dist: 0.6
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 0.9
+      lookahead_time: 1.5
+      use_velocity_scaled_lookahead_dist: false
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 0.6
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.0
+\end{lstlisting}
+
+Key parameters:
+\begin{itemize}
+    \item \textbf{Lookahead distance:} 0.6 m balances smoothness and responsiveness
+    \item \textbf{Collision detection:} Enabled to slow near obstacles
+    \item \textbf{Approach velocity:} Slows to 0.05 m/s near goal
+\end{itemize}
+
+\section{Navigation Troubleshooting}
+
+\subsection{Issue 1: Frame ID Mismatch (base\_footprint vs base\_link)}
+
+Initial Nav2 configuration used \texttt{base\_footprint} (TurtleBot convention), but \texttt{rudimentary\_bot} URDF defines \texttt{base\_link}.
+
+\textbf{Symptom:} Costmaps couldn't transform to robot frame, no motion commands generated.
+
+\textbf{Solution:} Change all frame references to \texttt{base\_link}:
+\begin{itemize}
+    \item \texttt{amcl.base\_frame\_id}
+    \item \texttt{costmaps.robot\_base\_frame}
+    \item \texttt{collision\_monitor.base\_frame\_id}
+\end{itemize}
+
+\subsection{Issue 2: LIDAR Range Limitation Discovery}
+
+\textbf{Critical realization:} AMCL parameters \texttt{laser\_max\_range} do not extend physical sensor range!
+
+Early iterations had AMCL configured with \texttt{laser\_max\_range: 100.0}, but the URDF LIDAR was configured with \texttt{<max>3.5</max>}.
+
+Physical sensor limits constrained localization performance in large open spaces. Final configuration:
+\begin{itemize}
+    \item URDF LIDAR: \texttt{<max>10.0</max>}
+    \item AMCL: \texttt{laser\_max\_range: 10.0}
+\end{itemize}
+
+\begin{keypoint}
+This was a major breakthrough in Phase 4. Nav2 parameters cannot compensate for inadequate sensor hardware specifications.
+\end{keypoint}
+
+\subsection{Issue 3: Map QoS Configuration}
+
+\textbf{Symptom:} RViz displayed "No map received" despite \texttt{map\_server} publishing.
+
+\textbf{Root cause:} Map uses \texttt{Transient Local} durability (latch behavior), but RViz defaulted to \texttt{Volatile}.
+
+\textbf{Solution:} Configure RViz map display with \texttt{Transient Local} durability:
+
+\begin{lstlisting}[language=yaml]
+Map:
+  Topic:
+    Durability Policy: Transient Local
+Update Topic:
+  Durability Policy: Transient Local
+\end{lstlisting}
+
+\subsection{Issue 4: Transform Authority Conflicts}
+
+Attempting to make Gazebo diff\_drive publish \texttt{odom → base\_link} TF (via \texttt{publish\_odom\_tf: true}) while EKF also published it caused:
+\begin{itemize}
+    \item TF tree conflicts
+    \item Navigation failures
+    \item "Robot won't move" symptom
+\end{itemize}
+
+\textbf{Solution:} Maintain single authority design:
+\begin{itemize}
+    \item Diff\_drive: \texttt{publish\_odom\_tf: false}
+    \item EKF: \texttt{publish\_tf: true}
+\end{itemize}
+
+\subsection{Issue 5: EKF Frequency Optimization Failure}
+
+Hypothesis: Increasing EKF frequency from 5 Hz to 30 Hz might reduce transform latency and improve localization.
+
+\textbf{Result:} \textit{Less stable} navigation with higher frequency.
+
+\textbf{Analysis:} Higher update rate increased CPU load, causing timing jitter and message filter drops. The 5 Hz configuration proved more stable.
+
+\begin{troubleshooting}
+\textbf{Lesson:} Higher update rates don't always improve performance. System-level effects (CPU load, message timing) can dominate algorithmic improvements.
+\end{troubleshooting}
+
+\subsection{Issue 6: Localization Drift and Wheel Slip}
+
+Under wheel slip conditions (collisions, sudden direction changes), odometry diverges rapidly. AMCL can re-converge but experiences temporary desynchronization:
+
+\begin{itemize}
+    \item Scan drifts off map
+    \item Particle filter spreads widely
+    \item Multiple goal commands may be needed for long traversals
+\end{itemize}
+
+This fundamental limitation motivates ongoing research in robust localization.
+
+\section{Summary}
+
+Phase 4 successfully configured the Nav2 stack:
+\begin{itemize}
+    \item AMCL with 1000-3000 particles and alpha=0.2 motion model
+    \item Costmaps with 0.25 m robot radius, 0.45 m inflation radius
+    \item Regulated Pure Pursuit controller (specification requirement)
+    \item Proper frame ID consistency (\texttt{base\_link} throughout)
+    \item 10 m LIDAR range in both URDF and AMCL
+    \item Single TF authority (EKF publishes \texttt{odom → base\_link})
+\end{itemize}
+
+Multiple goal navigation works reliably in nominal conditions, with known limitations under wheel slip.
+
+
+
+% ==========================================
+% CHAPTER 8: AUTONOMOUS PATROL SYSTEM
+% ==========================================
+
+\chapter{Autonomous Patrol System}
+\label{ch:patrol}
+
+This chapter consolidates Phase 5, describing waypoint management, patrol logic implementation, and data collection for offline analysis.
+
+\section{Waypoint Management}
+
+\subsection{Waypoint Recording from RViz}
+
+A custom node (\texttt{patrol\_waypoint\_recorder.py}) captures waypoints interactively:
+
+\begin{enumerate}
+    \item Subscribe to \topic{clicked\_point} (RViz "Publish Point" tool)
+    \item Accept exactly 3 clicks, automatically labeled as "kitchen", "bedroom", "home"
+    \item Save to \texttt{patrol\_waypoints.yaml} in map frame
+\end{enumerate}
+
+Example waypoints file:
+
+\begin{lstlisting}[language=yaml,caption={Patrol waypoints configuration}]
+waypoints:
+  kitchen:
+    frame_id: map
+    x: 1.2
+    y: -0.5
+    yaw: 0.0
+  bedroom:
+    frame_id: map
+    x: -2.3
+    y: 1.1
+    yaw: 0.0
+  home:
+    frame_id: map
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+\end{lstlisting}
+
+\section{Patrol Logic Implementation}
+
+\subsection{BasicNavigator API}
+
+The \texttt{house\_patrol.py} node uses the Nav2 SimpledCommander \texttt{BasicNavigator} API:
+
+\begin{lstlisting}[language=Python,caption={Patrol node structure}]
+from nav2_simple_commander.robot_navigator import BasicNavigator
+
+navigator = BasicNavigator()
+
+# Critical: Wait for Nav2 to fully initialize
+navigator.waitUntilNav2Active()
+
+# Set initial pose
+initial_pose = PoseStamped()
+initial_pose.header.frame_id = 'map'
+initial_pose.pose.position.x = 0.0
+initial_pose.pose.position.y = 0.0
+navigator.setInitialPose(initial_pose)
+
+# Navigate to each waypoint
+for waypoint_name in ['kitchen', 'bedroom', 'home']:
+    goal_pose = create_pose_from_waypoint(waypoint_name)
+    navigator.goToPose(goal_pose)
+    
+    # Monitor until complete
+    while not navigator.isTaskComplete():
+        feedback = navigator.getFeedback()
+        # Log progress...
+        time.sleep(0.1)
+    
+    result = navigator.getResult()
+    if result == TaskResult.SUCCEEDED:
+        print(f"Reached {waypoint_name}")
+    else:
+        print(f"Failed to reach {waypoint_name}: {result}")
+\end{lstlisting}
+
+\subsection{Error Handling and Recovery}
+
+The patrol system handles failures gracefully:
+
+\begin{itemize}
+    \item \textbf{TaskResult.SUCCEEDED:} Log success, continue to next waypoint
+    \item \textbf{TaskResult.FAILED:} Log failure with error code, continue anyway
+    \item \textbf{TaskResult.CANCELED:} Log cancellation, continue
+\end{itemize}
+
+This "best effort" approach ensures partial mission completion even if individual goals fail.
+
+\section{Data Collection}
+
+\subsection{Headless Recording Configuration}
+
+The \texttt{record\_patrol.launch.py} enables headless operation:
+
+\begin{lstlisting}[language=Python]
+navigation_launch = IncludeLaunchDescription(
+    ...,
+    launch_arguments={
+        'use_rviz': 'false',      # Disable GUI
+        'use_goal_bridge': 'false' # No manual goal setting
+    }.items()
+)
+\end{lstlisting}
+
+Recording topics:
+\begin{itemize}
+    \item \textbf{State:} /odom, /odometry/filtered, /amcl\_pose
+    \item \textbf{Sensors:} /scan, /imu
+    \item \textbf{Control:} /cmd\_vel
+    \item \textbf{Planning:} /plan (global path)
+    \item \textbf{Transforms:} /tf, /tf\_static
+\end{itemize}
+
+\subsection{Recording Duration and Quality}
+
+Typical patrol recording characteristics:
+\begin{itemize}
+    \item \textbf{Duration:} 38 seconds (full 3-waypoint loop)
+    \item \textbf{Messages:} 17,730 total
+    \item \textbf{Bag size:} 13.9 MB (MCAP format)
+    \item \textbf{Dominant topics:} /joint\_states (10,676), /tf (3,169), /scan (1,964), /odom (1,915)
+\end{itemize}
+
+\section{Summary}
+
+Phase 5 delivered autonomous patrol capability:
+\begin{itemize}
+    \item Interactive waypoint capture from RViz
+    \item BasicNavigator-based patrol execution
+    \item Robust error handling for partial mission completion
+    \item Headless recording for clean data capture
+    \item Comprehensive topic recording for analysis
+\end{itemize}
+
+
+% ==========================================
+% CHAPTER 9: PERFORMANCE ANALYSIS
+% ==========================================
+
+\chapter{Performance Analysis}
+\label{ch:analysis}
+
+This chapter consolidates Phase 6, describing the offline analysis pipeline, path reconstruction methodology, and visualization of navigation performance.
+
+\section{Analysis Pipeline Architecture}
+
+\subsection{Bag Playback Configuration}
+
+The \texttt{analyze\_patrol.launch.py} creates a deterministic replay environment:
+
+\begin{enumerate}
+    \item \textbf{Bag playback:} \texttt{ros2 bag play --clock} drives simulated time
+    \item \textbf{Map server:} Publishes static map from saved PGM/YAML
+    \item \textbf{Lifecycle manager:} Activates map server
+    \item \textbf{Robot state publisher:} Provides TF tree from URDF
+    \item \textbf{Analysis node:} Transforms odometry to map frame
+    \item \textbf{RViz:} Visualizes playback with paths
+\end{enumerate}
+
+\subsection{Transform Computation in Map Frame}
+
+The \texttt{patrol\_analysis.py} node reconstructs the actual path taken:
+
+\begin{lstlisting}[language=Python,caption={Path reconstruction algorithm}]
+# Subscribe to odometry from bag
+self.odom_sub = self.create_subscription(
+    Odometry, '/odometry/filtered', 
+    self.odom_callback, 10
+)
+
+# Lookup map -> odom transform
+try:
+    transform = self.tf_buffer.lookup_transform(
+        'map', 'odom', 
+        odom_msg.header.stamp,
+        timeout=rclpy.duration.Duration(seconds=1.0)
+    )
+except TransformException:
+    return  # Skip if transform unavailable
+    
+# Transform pose to map frame
+pose_odom = PoseStamped()
+pose_odom.header = odom_msg.header
+pose_odom.pose = odom_msg.pose.pose
+
+pose_map = do_transform_pose(pose_odom, transform)
+
+# Append to path
+self.actual_path.poses.append(pose_map)
+self.actual_path_pub.publish(self.actual_path)
+\end{lstlisting}
+
+\subsection{PlotJuggler Integration}
+
+For XY trajectory plotting, analysis node publishes \texttt{PointStamped} messages:
+
+\begin{lstlisting}[language=Python]
+# Publish for PlotJuggler streaming
+actual_xy = PointStamped()
+actual_xy.header.frame_id = 'map'
+actual_xy.point.x = pose_map.pose.position.x
+actual_xy.point.y = pose_map.pose.position.y
+self.actual_xy_pub.publish(actual_xy)
+\end{lstlisting}
+
+PlotJuggler subscribes live during playback, creating XY scatter plots comparing planned vs actual paths.
+
+\section{Path Tracking Analysis}
+
+\subsection{Planned vs Actual Trajectory Comparison}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/patrol/patrol_plot.png}
+    \caption{Planned vs actual trajectory comparison in PlotJuggler: Red points show planned path, green points show actual executed path with localization drift visible}
+    \label{fig:patrol_plot}
+\end{figure}
+
+Observations from trajectory comparison:
+\begin{itemize}
+    \item \textbf{Short segments:} Actual path closely tracks planned path (<0.1 m deviation)
+    \item \textbf{Long segments:} Gradual drift accumulates (0.2--0.3 m over several meters)
+    \item \textbf{Turns:} Sharper actual paths than planned (controller characteristics)
+    \item \textbf{Goal approach:} Final convergence within goal tolerance
+\end{itemize}
+
+\subsection{Deviation Metrics}
+
+Quantitative analysis (Phase 6 results):
+\begin{itemize}
+    \item \textbf{Mean absolute deviation:} 0.15 m
+    \item \textbf{Maximum deviation:} 0.35 m (during long corridor traversal)
+    \item \textbf{RMS deviation:} 0.18 m
+    \item \textbf{Goal position error:} <0.1 m (within tolerance)
+\end{itemize}
+
+\section{Visualization Challenges}
+
+\subsection{Detached Wheels Problem}
+
+\textbf{Symptom:} During playback, robot chassis visible in RViz but wheels appeared at origin (0,0) or missing entirely.
+
+\textbf{Root cause:} Continuous joints (wheels) require \topic{joint\_states} messages to determine position. The bag contained \topic{tf} and \topic{tf\_static}, but no mechanism published wheel joint states during playback.
+
+\textbf{Attempted fixes that failed:}
+\begin{enumerate}
+    \item Adding \texttt{joint\_state\_publisher}: Conflicted with bag TF data
+    \item \texttt{ignore\_timestamp: true} in robot\_state\_publisher: Didn't resolve continuous joint issue
+    \item Topic remapping: TF conflicts persisted
+\end{enumerate}
+
+\textbf{Successful solution:} Create specialized analysis URDF (\texttt{rudimentary\_bot\_analysis.urdf.xacro}) with wheels converted from \texttt{continuous} to \texttt{fixed} joints.
+
+Wheels become part of static robot geometry, rendered correctly without dynamic joint states:
+
+\begin{lstlisting}[language=xml,caption={Fixed wheel joints for analysis}]
+<!-- Changed from continuous to fixed for playback -->
+<joint name="left_wheel_joint" type="fixed">
+  <parent link="base_link"/>
+  <child link="left_wheel"/>
+  <origin xyz="0 0.175 0.1" rpy="0 0 0"/>
+</joint>
+\end{lstlisting}
+
+\begin{troubleshooting}
+\textbf{Lesson:} Bag playback visualization requires careful consideration of what data is recorded vs what's computed live. For offline analysis, simplified URDFs may be more appropriate than full dynamic models.
+\end{troubleshooting}
+
+\section{Results and Discussion}
+
+\subsection{Navigation Success Rate}
+
+Across multiple test runs:
+\begin{itemize}
+    \item \textbf{Single-goal success:} ~95\% (19/20 attempts)
+    \item \textbf{Three-waypoint patrol completion:} ~75\% (6/8 attempts)
+    \item \textbf{Failure modes:} Planner timeout in tight spaces, localization drift after collision
+\end{itemize}
+
+\subsection{Localization Drift Characteristics}
+
+The \texttt{map → odom} transform exhibits characteristic drift patterns:
+\begin{itemize}
+    \item \textbf{Nominal motion:} Stable, <0.05 m/s drift rate
+    \item \textbf{After collision:} Rapid divergence (0.2-0.3 m jump)
+    \item \textbf{Recovery:} AMCL re-converges within 2-3 seconds with good features
+    \item \textbf{Feature-poor areas:} Slower convergence, persistent uncertainty
+\end{itemize}
+
+\subsection{Map-Odom Frame Jitter}
+
+As noted in the project reflection, the \texttt{map → odom} transform requires additional tuning. Observed jitter manifests as:
+\begin{itemize}
+    \item High-frequency oscillations in RViz visualization
+    \item Particle spread during stationary periods
+    \item Sensitivity to AMCL parameter selection
+\end{itemize}
+
+This is an expected characteristic of particle filter localization under wheel slip, motivating future work on more robust localization methods.
+
+\section{Summary}
+
+Phase 6 provided comprehensive performance analysis:
+\begin{itemize}
+    \item Offline playback with map-frame path reconstruction
+    \item PlotJuggler integration for trajectory comparison
+    \item Quantified path tracking accuracy (~0.15 m mean deviation)
+    \item Identified localization drift patterns and failure modes
+    \item Solved visualization challenges with specialized analysis URDF
+\end{itemize}
+
+The analysis validates the navigation system's performance while clearly documenting limitations for future improvement.
+
+
+
+% ==========================================
+% CHAPTER 10: INTEGRATION AND VALIDATION
+% ==========================================
+
+\chapter{Integration and System Validation}
+\label{ch:integration}
+
+This chapter discusses end-to-end system testing, multi-goal navigation scenarios, and documented limitations.
+
+\section{End-to-End Testing}
+
+\subsection{Multi-Goal Navigation Scenarios}
+
+Testing scenarios executed:
+
+\begin{enumerate}
+    \item \textbf{Short range (2-3 m):} High success rate, minimal drift
+    \item \textbf{Medium range (5-8 m):} Reliable with occasional replanning
+    \item \textbf{Long range (>10 m):} Increased localization drift, multiple attempts sometimes needed
+    \item \textbf{Through doorways:} Successful with 0.45 m inflation radius
+    \item \textbf{Around furniture:} Local planner handles obstacles effectively
+\end{enumerate}
+
+\subsection{Collision and Recovery Behavior}
+
+When collisions occur:
+\begin{itemize}
+    \item Controller detects collision ahead and stops
+    \item Behavior tree triggers recovery (back up + rotate)
+    \item Planner generates alternate path
+    \item Execution resumes
+\end{itemize}
+
+Recovery success rate: ~70\% (7/10 collision events)
+
+\subsection{System Robustness Assessment}
+
+\textbf{Strengths:}
+\begin{itemize}
+    \item Stable in nominal conditions
+    \item Effective obstacle avoidance
+    \item Reasonable path tracking accuracy
+    \item Autonomous patrol completion capability
+\end{itemize}
+
+\textbf{Weaknesses:}
+\begin{itemize}
+    \item Sensitive to wheel slip
+    \item Localization drift in feature-poor areas
+    \item Occasional planner timeouts in tight spaces
+    \item Map-odom jitter under dynamic conditions
+\end{itemize}
+
+\section{Known Limitations}
+
+\subsection{Map-Odom Transform Tuning}
+
+As noted in project reflections, the \texttt{map → odom} transform needs additional tuning. Current parameter set provides functional but sub-optimal performance. Future work should explore:
+
+\begin{itemize}
+    \item Alternative AMCL motion models
+    \item Adaptive particle count strategies
+    \item Sensor model parameter optimization
+    \item Multi-hypothesis tracking approaches
+\end{itemize}
+
+\subsection{Wheel Slip Impact}
+
+Wheel slip remains a fundamental challenge:
+\begin{itemize}
+    \item Odometry diverges rapidly during slip
+    \item AMCL requires time to re-converge
+    \item Multiple goal attempts may be needed
+\end{itemize}
+
+Mitigation strategies for future work:
+\begin{itemize}
+    \item Visual odometry integration
+    \item More aggressive AMCL tuning
+    \item Slip detection and explicit handling
+\end{itemize}
+
+\subsection{Computational Performance}
+
+Performance considerations:
+\begin{itemize}
+    \item Heavy AMCL settings (3000 particles) consume significant CPU
+    \item Nav2 full stack requires modern compute
+    \item Visualization (RViz + Gazebo) impacts real-time performance
+\end{itemize}
+
+For embedded deployment, parameter reduction would be necessary.
+
+\subsection{Sensor Range Limitations}
+
+The 10 m LIDAR range, while adequate for the home environment, constrains performance in:
+\begin{itemize}
+    \item Large open spaces
+    \item Long corridors
+    \item Loop closure detection range
+\end{itemize}
+
+\section{Summary}
+
+The integrated system successfully demonstrates autonomous navigation with:
+\begin{itemize}
+    \item Multi-waypoint patrol capability
+    \item Collision avoidance and recovery
+    \item Measurable path tracking performance
+\end{itemize}
+
+Known limitations provide clear direction for future improvements.
+
+
+% ==========================================
+% CHAPTER 11: LESSONS LEARNED
+% ==========================================
+
+\chapter{Lessons Learned and Best Practices}
+\label{ch:lessons}
+
+This chapter distills key insights from the troubleshooting process into actionable best practices for ROS 2 mobile robotics development.
+
+\section{Configuration Management}
+
+\subsection{YAML Parameter Organization}
+
+\textbf{Best practices identified:}
+
+\begin{itemize}
+    \item \textbf{Hierarchical structure:} Group related parameters by node/plugin
+    \item \textbf{Comments:} Document non-obvious parameter choices with rationale
+    \item \textbf{Version control:} Track parameter evolution through git commits
+    \item \textbf{Defaults:} Start from known-good templates, make incremental changes
+\end{itemize}
+
+\textbf{Common pitfalls:}
+\begin{itemize}
+    \item Empty lists cause launch failures (omit parameter instead)
+    \item \texttt{null} interpreted as string \texttt{"null"} (comment out instead)
+    \item Type mismatches between YAML and node expectations
+\end{itemize}
+
+\subsection{QoS Profile Selection}
+
+\textbf{Critical lessons:}
+
+\begin{itemize}
+    \item \textbf{Sensors:} Use Best Effort to match Gazebo defaults
+    \item \textbf{Commands:} Use Reliable for \topic{cmd\_vel}
+    \item \textbf{Maps:} Use Transient Local for latched behavior
+    \item \textbf{Mismatch symptoms:} No data received despite topic existing
+\end{itemize}
+
+\textbf{Debugging approach:}
+\begin{enumerate}
+    \item Check topic exists: \texttt{ros2 topic list}
+    \item Check publishing rate: \texttt{ros2 topic hz /topic}
+    \item Check QoS: \texttt{ros2 topic info /topic -v}
+    \item Match subscriber QoS to publisher
+\end{enumerate}
+
+\subsection{Frame ID Consistency}
+
+\textbf{Rule: Use consistent frame names across entire stack}
+
+Common frame ID mistakes:
+\begin{itemize}
+    \item Using \texttt{base\_footprint} (TurtleBot convention) when URDF defines \texttt{base\_link}
+    \item Mixing \texttt{laser} and \texttt{laser\_link}
+    \item Inconsistent odom frame names
+\end{itemize}
+
+\textbf{Systematic approach:}
+\begin{enumerate}
+    \item Define frame hierarchy in URDF first
+    \item Document standard frames in project README
+    \item Use search/replace to ensure consistency across configs
+    \item Validate with \texttt{ros2 run tf2\_tools view\_frames}
+\end{enumerate}
+
+\subsection{Launch File Modularity}
+
+\textbf{Successful pattern from this project:}
+
+\begin{itemize}
+    \item Base layer: simulation + robot + bridge
+    \item Add-on layers: EKF, SLAM, Nav2, patrol, analysis
+    \item Conditional nodes: Use launch arguments for variants
+    \item Environment setup: Wrapper scripts for platform-specific config
+\end{itemize}
+
+This enables incremental development and reusability.
+
+\section{Debugging Methodology}
+
+\subsection{Systematic Troubleshooting Approach}
+
+\textbf{Effective debugging workflow:}
+
+\begin{enumerate}
+    \item \textbf{Isolate:} Which subsystem is failing?
+    \item \textbf{Observe:} What are the symptoms? (No motion, no data, crashes, errors)
+    \item \textbf{Hypothesize:} Formulate specific testable hypotheses
+    \item \textbf{Test:} Make minimal changes, one at a time
+    \item \textbf{Validate:} Verify fix solves problem and doesn't introduce new issues
+    \item \textbf{Document:} Record what failed, why, and the solution
+\end{enumerate}
+
+\subsection{Tool Usage}
+
+\textbf{Essential ROS 2 debugging tools:}
+
+\begin{itemize}
+    \item \texttt{ros2 topic list/echo/hz/info}: Topic inspection
+    \item \texttt{ros2 node list/info}: Node inspection
+    \item \texttt{ros2 param list/get/set}: Parameter inspection
+    \item \texttt{ros2 run tf2\_tools view\_frames}: TF tree visualization
+    \item \texttt{ros2 run tf2\_ros tf2\_echo}: Transform lookup testing
+    \item \texttt{rqt\_graph}: Node/topic graph visualization
+    \item \texttt{ros2 bag}: Data recording and playback
+    \item \texttt{rviz2}: Visual debugging and validation
+\end{itemize}
+
+\subsection{Log Analysis Techniques}
+
+\textbf{Effective log inspection:}
+
+\begin{itemize}
+    \item Enable debug logging: \texttt{--log-level DEBUG}
+    \item Filter by node: \texttt{grep [node\_name]}
+    \item Look for ERROR and WARN messages first
+    \item Check timestamps for timing-related issues
+    \item Correlate events across multiple logs
+\end{itemize}
+
+\subsection{Iterative Parameter Tuning}
+
+\textbf{Lessons from AMCL/EKF tuning:}
+
+\begin{itemize}
+    \item \textbf{Start conservative:} High particle counts, low alpha values
+    \item \textbf{Change one parameter:} Isolate effects
+    \item \textbf{Record baseline:} Quantify performance before/after
+    \item \textbf{Understand interactions:} Some parameters counteract each other
+    \item \textbf{Don't over-optimize:} ``Good enough'' often better than ``perfect''
+\end{itemize}
+
+\section{Common Pitfalls}
+
+\subsection{Transform Timing Issues}
+
+\textbf{Symptoms:}
+\begin{itemize}
+    \item "Transform from X to Y does not exist"
+    \item "Lookup would require extrapolation into the past"
+    \item Message filter dropping messages
+\end{itemize}
+
+\textbf{Causes:}
+\begin{itemize}
+    \item Multiple publishers for same transform (TF conflict)
+    \item Insufficient transform timeout
+    \item Clock synchronization issues (sim time vs wall time)
+    \item Sensor data arriving before transforms
+\end{itemize}
+
+\textbf{Solutions:}
+\begin{itemize}
+    \item Ensure single TF authority per transform
+    \item Increase transform\_tolerance in message filters
+    \item Use \texttt{use\_sim\_time: true} consistently
+    \item Add startup delays for transform availability
+\end{itemize}
+
+\subsection{Lifecycle Node Activation}
+
+\textbf{Key insight: Many Nav2 nodes are lifecycle nodes requiring explicit activation}
+
+\textbf{Symptoms:}
+\begin{itemize}
+    \item Node running but not subscribing/publishing
+    \item Services available but not responding
+    \item "Node not active" errors
+\end{itemize}
+
+\textbf{Solution:}
+\begin{itemize}
+    \item Use \texttt{nav2\_lifecycle\_manager} with \texttt{autostart: true}
+    \item List all lifecycle nodes in \texttt{node\_names} parameter
+    \item Ensure lifecycle manager starts after nodes
+\end{itemize}
+
+\subsection{Parameter Type Mismatches}
+
+\textbf{Examples from this project:}
+\begin{itemize}
+    \item \texttt{map\_start\_pose: null} → type error (use empty array or omit)
+    \item \texttt{source\_list: []} → launch failure (omit parameter)
+    \item Integer where float expected or vice versa
+\end{itemize}
+
+\textbf{Prevention:}
+\begin{itemize}
+    \item Check node documentation for expected types
+    \item Use explicit type notation when ambiguous: \texttt{1.0} vs \texttt{1}
+    \item Test parameter files in isolation before full launch
+\end{itemize}
+
+\subsection{URDF Plugin Configuration Errors}
+
+\textbf{Gazebo Harmonic-specific requirements:}
+
+\begin{itemize}
+    \item \texttt{<scan>} wrapper required for LIDAR horizontal/vertical
+    \item \texttt{<vertical>} section required even for 2D LIDAR
+    \item \texttt{<always\_on>true</always\_on>} needed for continuous operation
+    \item \texttt{<publish\_odom\_tf>false</publish\_odom\_tf>} for EKF integration
+\end{itemize}
+
+\textbf{Debugging approach:}
+\begin{itemize}
+    \item Check Gazebo console for plugin load errors
+    \item Verify topic bridging with \texttt{ros2 topic list}
+    \item Compare against working examples
+\end{itemize}
+
+\section{Platform-Specific Considerations}
+
+\subsection{Pop!\_OS and NVIDIA GPU Compatibility}
+
+\textbf{Issues encountered:}
+\begin{itemize}
+    \item Gazebo/RViz GUI crashes on launch
+    \item Black screen or flickering windows
+    \item OpenGL context errors
+\end{itemize}
+
+\textbf{Solutions (wrapper script approach):}
+
+\begin{lstlisting}[language=bash]
+# Force X11 (avoid Wayland issues)
+export QT_QPA_PLATFORM=xcb
+export GDK_BACKEND=x11
+
+# NVIDIA-specific settings
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
+export __NV_PRIME_RENDER_OFFLOAD=1
+
+# OpenGL/Ogre settings
+export OGRE_RTT_PREFERRED_MODE=FBO
+export QT_OPENGL=desktop
+
+# Allow X11 connections
+xhost +local:
+\end{lstlisting}
+
+\textbf{Lesson:} Platform-specific issues should be isolated in wrapper scripts, not embedded in launch files.
+
+\section{Summary}
+
+Key best practices identified:
+\begin{itemize}
+    \item Systematic configuration management with version control
+    \item QoS profile matching for all topics
+    \item Frame ID consistency across entire stack
+    \item Modular launch file architecture
+    \item Methodical debugging with proper tools
+    \item Understanding lifecycle node requirements
+    \item Platform-specific environment isolation
+\end{itemize}
+
+These lessons provide a foundation for future ROS 2 mobile robotics projects.
+
+
+% ==========================================
+% CHAPTER 12: CONCLUSIONS
+% ==========================================
+
+\chapter{Conclusions and Future Work}
+\label{ch:conclusions}
+
+\section{Summary of Achievements}
+
+This project successfully developed a complete autonomous navigation system for a domestic mobile robot, progressing through six phases:
+
+\subsection{Technical Accomplishments}
+
+\textbf{Phase 1 - Robot Design:}
+\begin{itemize}
+    \item Custom differential drive robot with optimized sensor placement
+    \item Gazebo Harmonic integration with realistic physics
+    \item Proper TF architecture for sensor fusion
+\end{itemize}
+
+\textbf{Phase 2 - LIDAR Processing:}
+\begin{itemize}
+    \item QoS-matched sensor subscriptions
+    \item False detection mitigation through mechanical design
+    \item Statistical data validation
+\end{itemize}
+
+\textbf{Phase 3 - SLAM:}
+\begin{itemize}
+    \item Complete house map generation using SLAM Toolbox
+    \item Graph-based SLAM with loop closure
+    \item Lifecycle node management mastery
+\end{itemize}
+
+\textbf{Phase 4 - Navigation:}
+\begin{itemize}
+    \item Full Nav2 stack configuration
+    \item AMCL localization with 1000-3000 particles
+    \item Regulated Pure Pursuit controller implementation
+    \item Multi-goal navigation capability
+\end{itemize}
+
+\textbf{Phase 5 - Autonomous Patrol:}
+\begin{itemize}
+    \item Waypoint-based mission execution
+    \item BasicNavigator API integration
+    \item Comprehensive data recording
+\end{itemize}
+
+\textbf{Phase 6 - Performance Analysis:}
+\begin{itemize}
+    \item Offline trajectory reconstruction
+    \item Path tracking quantification (0.15 m mean deviation)
+    \item PlotJuggler visualization pipeline
+\end{itemize}
+
+\subsection{Educational Insights}
+
+The project provided deep understanding of:
+\begin{itemize}
+    \item State estimation theory (EKF, particle filters)
+    \item SLAM algorithms and graph optimization
+    \item Path planning and trajectory following
+    \item ROS 2 system integration and debugging
+    \item The critical interplay between mechanical design and sensor processing
+\end{itemize}
+
+\section{Future Improvements}
+
+\subsection{Near-Term Enhancements}
+
+\textbf{Localization Robustness:}
+\begin{itemize}
+    \item Further AMCL parameter tuning for reduced jitter
+    \item Adaptive particle count strategies
+    \item Visual odometry integration for slip detection
+\end{itemize}
+
+\textbf{Navigation Reliability:}
+\begin{itemize}
+    \item More sophisticated recovery behaviors
+    \item Dynamic obstacle handling
+    \item Path smoothing post-processing
+\end{itemize}
+
+\textbf{Performance Optimization:}
+\begin{itemize}
+    \item Reduced particle count for embedded deployment
+    \item Costmap resolution tuning
+    \item Sensor fusion weight optimization
+\end{itemize}
+
+\subsection{Advanced Extensions}
+
+\textbf{Multi-Robot Coordination:}
+\begin{itemize}
+    \item Distributed SLAM
+    \item Collision avoidance between robots
+    \item Task allocation and scheduling
+\end{itemize}
+
+\textbf{Semantic Understanding:}
+\begin{itemize}
+    \item Object detection and recognition
+    \item Room segmentation and labeling
+    \item Natural language goal specification
+\end{itemize}
+
+\textbf{Real Hardware Deployment:}
+\begin{itemize}
+    \item Physical robot construction
+    \item Real sensor calibration
+    \item Hardware-specific tuning
+    \item Field testing in actual home
+\end{itemize}
+
+\section{Academic Context and Industry Relevance}
+
+\subsection{Course Objectives Addressed}
+
+This project fulfilled all course requirements:
+\begin{itemize}
+    \item Topics from Exercises 1--4 integrated
+    \item ROS 2 tutorials 1--10 applied
+    \item Custom robot development (not pre-built platform)
+    \item Complete navigation pipeline implementation
+    \item Comprehensive documentation and analysis
+\end{itemize}
+
+\subsection{Industry Applications}
+
+The techniques demonstrated apply directly to:
+\begin{itemize}
+    \item \textbf{Domestic service robots:} Vacuum cleaners, delivery robots
+    \item \textbf{Warehouse automation:} Autonomous material handling
+    \item \textbf{Healthcare:} Hospital delivery and assistance robots
+    \item \textbf{Agriculture:} Greenhouse and barn automation
+    \item \textbf{Inspection:} Infrastructure monitoring robots
+\end{itemize}
+
+\subsection{Skills and Knowledge Acquired}
+
+\textbf{Technical skills:}
+\begin{itemize}
+    \item ROS 2 system architecture and integration
+    \item URDF/Xacro robot modeling
+    \item Gazebo simulation configuration
+    \item Launch system design
+    \item Parameter tuning and debugging
+    \item Data analysis and visualization
+\end{itemize}
+
+\textbf{Algorithmic knowledge:}
+\begin{itemize}
+    \item Extended Kalman Filtering
+    \item Graph-based SLAM
+    \item Particle filter localization
+    \item A* path planning
+    \item Pure pursuit control
+\end{itemize}
+
+\textbf{Systems engineering:}
+\begin{itemize}
+    \item Requirements analysis
+    \item Incremental development
+    \item Systematic troubleshooting
+    \item Documentation practices
+    \item Performance evaluation
+\end{itemize}
+
+\section{Final Reflections}
+
+\subsection{Most Impactful Decisions}
+
+\textbf{1. Adding front caster wheel (mechanical solution to sensor problem)}
+
+This single design change eliminated false wall detections that had persisted through multiple software-based mitigation attempts. It exemplifies the importance of system-level thinking.
+
+\textbf{2. Understanding physical sensor limits (10 m LIDAR range)}
+
+The realization that Nav2 parameters cannot extend physical sensor capabilities was a breakthrough in Phase 4 troubleshooting.
+
+\textbf{3. Single TF authority architecture (EKF publishes odom→base\_link)}
+
+Proper TF management prevented conflicts and enabled clean sensor fusion throughout all phases.
+
+\subsection{Most Valuable Lessons}
+
+\begin{enumerate}
+    \item \textbf{Start from known-good examples:} Incremental changes to validated baselines reduce debugging time
+    \item \textbf{Document as you go:} Detailed phase reports captured troubleshooting context invaluable for final analysis
+    \item \textbf{Mechanical design matters:} Robot dynamics impact sensor processing at least as much as algorithms
+    \item \textbf{QoS matters more than expected:} Many hours lost to QoS mismatches that seem obvious in retrospect
+    \item \textbf{Lifecycle nodes require attention:} Modern ROS 2 packages use lifecycle management that must be explicitly handled
+\end{enumerate}
+
+\section{Concluding Remarks}
+
+This project demonstrated that building a complete autonomous navigation system from first principles is achievable within an academic semester. The resulting system successfully navigates a simulated home environment with measurable performance and documented limitations.
+
+The iterative development process, comprehensive troubleshooting documentation, and systematic analysis provide a reusable template for future mobile robotics projects. The codebase, configurations, and this report represent a complete, reproducible example of modern ROS 2 navigation system development.
+
+Most importantly, the project achieved its educational objective: developing deep, practical understanding of mobile robotics through hands-on implementation, debugging, and analysis of a complete autonomous system.
+
+
+% ==========================================
+% APPENDICES
+% ==========================================
+
+\appendix
+
+\chapter{Configuration Files}
+\label{app:configs}
+
+This appendix provides annotated excerpts from key configuration files.
+
+\section{Nav2 Parameters (nav2\_params.yaml)}
+
+\textbf{Critical parameters:}
+
+\begin{lstlisting}[language=yaml,caption={Nav2 key parameters}]
+amcl:
+  ros__parameters:
+    use_sim_time: true
+    # Particle filter
+    min_particles: 1000
+    max_particles: 3000
+    # Motion model (lower = trust odom more)
+    alpha1: 0.2  # rotation from rotation
+    alpha2: 0.2  # rotation from translation
+    alpha3: 0.2  # translation from translation
+    alpha4: 0.2  # translation from rotation
+    # Sensor model
+    laser_model_type: "likelihood_field"
+    laser_max_range: 10.0  # Must match URDF
+    laser_min_range: 0.4   # Must match URDF
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      robot_radius: 0.25    # REQUIREMENT
+      inflation_layer:
+        inflation_radius: 0.45    # REQUIREMENT
+        cost_scaling_factor: 5.0  # REQUIREMENT
+
+controller_server:
+  ros__parameters:
+    controller_plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"  # REQUIREMENT
+      desired_linear_vel: 0.5
+      lookahead_dist: 0.6
+\end{lstlisting}
+
+\section{EKF Parameters (ekf\_slam\_params.yaml)}
+
+\begin{lstlisting}[language=yaml,caption={EKF configuration}]
+ekf_filter_node:
+  ros__parameters:
+    use_sim_time: true
+    frequency: 5.0
+    sensor_timeout: 0.2
+    publish_tf: true  # CRITICAL for SLAM/Nav2
+    
+    odom0: /odom
+    odom0_config: [true, true, false,
+                   false, false, true,
+                   true, true, false,
+                   false, false, true,
+                   false, false, false]
+    
+    imu0: /imu
+    imu0_config: [false, false, false,
+                  false, false, true,
+                  false, false, false,
+                  false, false, true,
+                  true, true, false]
+\end{lstlisting}
+
+\chapter{Command Reference}
+\label{app:commands}
+
+\section{Build and Installation}
+
+\begin{lstlisting}[language=bash,caption={Build commands}]
+# Source ROS 2
+source /opt/ros/jazzy/setup.bash
+
+# Build workspace
+cd ~/ros2_ws
+colcon build --packages-select exercise_launch
+
+# Source workspace
+source install/setup.bash
+\end{lstlisting}
+
+\section{Execution Commands}
+
+\begin{lstlisting}[language=bash,caption={Running each phase}]
+# Phase 1: Simulation only
+./src/exercise_launch/scripts/run_simulation.sh
+
+# Phase 2: LIDAR reading
+./src/exercise_launch/scripts/run_phase2.sh
+
+# Phase 3: SLAM mapping
+./src/exercise_launch/scripts/run_slam.sh
+# Drive with teleop_twist_keyboard
+# Save map: ./src/exercise_launch/scripts/save_map.sh
+
+# Phase 4: Navigation
+./src/exercise_launch/scripts/run_navigation.sh
+# Click goals in RViz
+
+# Phase 5: Record patrol
+./src/exercise_launch/scripts/run_patrol_waypoint_recorder.sh
+# Click 3 points, then:
+./src/exercise_launch/scripts/run_record_patrol.sh
+
+# Phase 6: Analyze patrol
+./src/exercise_launch/scripts/run_analyze_patrol.sh
+# Open PlotJuggler for trajectory comparison
+\end{lstlisting}
+
+\section{Diagnostic Commands}
+
+\begin{lstlisting}[language=bash,caption={Debugging tools}]
+# Topic inspection
+ros2 topic list
+ros2 topic echo /scan --once
+ros2 topic hz /odom
+ros2 topic info /map -v
+
+# TF debugging
+ros2 run tf2_tools view_frames
+ros2 run tf2_ros tf2_echo map base_link
+
+# Node inspection
+ros2 node list
+ros2 node info /amcl
+
+# Parameter inspection
+ros2 param list /amcl
+ros2 param get /amcl laser_max_range
+
+# Bag inspection
+ros2 bag info exercise4_recording
+\end{lstlisting}
+
+\chapter{Hardware and Software Versions}
+\label{app:versions}
+
+\section{Development System}
+
+\begin{table}[htbp]
+\centering
+\caption{System specifications}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+Operating System & Pop!\_OS 24.04 LTS (based on Ubuntu 24.04) \\
+Kernel & Linux 6.17.9 \\
+CPU & [Unspecified - modern x86-64] \\
+GPU & NVIDIA RTX 3080 \\
+RAM & [Unspecified - adequate for simulation] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Software Versions}
+
+\begin{table}[htbp]
+\centering
+\caption{Software stack versions}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+ROS 2 & Jazzy Jalisco \\
+Gazebo & Harmonic \\
+Nav2 & Jazzy release \\
+SLAM Toolbox & Latest compatible with Jazzy \\
+robot\_localization & Latest compatible with Jazzy \\
+ros\_gz\_bridge & Harmonic bridge for Jazzy \\
+Python & 3.12+ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ==========================================
+% BIBLIOGRAPHY AND END
+% ==========================================
+
+\printbibliography
+
+\end{document}
+

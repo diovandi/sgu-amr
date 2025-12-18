@@ -1,0 +1,16 @@
+waypoints:
+  kitchen:
+    frame_id: map
+    x: -2.122802734375
+    y: 4.258971691131592
+    yaw: 0.0
+  bedroom:
+    frame_id: map
+    x: 3.938004493713379
+    y: -5.441896438598633
+    yaw: 0.0
+  home:
+    frame_id: map
+    x: -1.5666322708129883
+    y: -2.785860061645508
+    yaw: 0.0

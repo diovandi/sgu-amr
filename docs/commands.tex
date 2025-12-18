@@ -1,0 +1,154 @@
+% Custom Commands and Macros for Final Project Report
+% Domestic Mobile Robot - Nav2 & SLAM
+
+% ===== Abbreviations and Shortcuts =====
+\newcommand{\ros}{ROS\xspace}
+\newcommand{\rostwo}{ROS~2\xspace}
+\newcommand{\navtwo}{Nav2\xspace}
+\newcommand{\amcl}{AMCL\xspace}
+\newcommand{\ekf}{EKF\xspace}
+\newcommand{\slam}{SLAM\xspace}
+\newcommand{\lidar}{LIDAR\xspace}
+\newcommand{\imu}{IMU\xspace}
+\newcommand{\urdf}{URDF\xspace}
+\newcommand{\xacro}{Xacro\xspace}
+\newcommand{\tf}{TF\xspace}
+\newcommand{\qos}{QoS\xspace}
+\newcommand{\yaml}{YAML\xspace}
+\newcommand{\mcl}{MCL\xspace}
+
+% ===== Mathematical Notation =====
+
+% State vectors
+\newcommand{\state}{\mathbf{x}}
+\newcommand{\statehat}{\hat{\mathbf{x}}}
+\newcommand{\statebar}{\bar{\mathbf{x}}}
+
+% Covariance matrices
+\newcommand{\cov}{\mathbf{P}}
+\newcommand{\covhat}{\hat{\mathbf{P}}}
+\newcommand{\covbar}{\bar{\mathbf{P}}}
+
+% Measurement vectors
+\newcommand{\meas}{\mathbf{z}}
+\newcommand{\meashat}{\hat{\mathbf{z}}}
+
+% Control input
+\newcommand{\control}{\mathbf{u}}
+
+% Process noise
+\newcommand{\procnoise}{\mathbf{w}}
+\newcommand{\procnoisecov}{\mathbf{Q}}
+
+% Measurement noise
+\newcommand{\measnoise}{\mathbf{v}}
+\newcommand{\measnoisecov}{\mathbf{R}}
+
+% Jacobian matrices
+\newcommand{\jacobf}{\mathbf{F}}
+\newcommand{\jacobh}{\mathbf{H}}
+\newcommand{\jacobg}{\mathbf{G}}
+
+% Kalman gain
+\newcommand{\kalmangain}{\mathbf{K}}
+
+% Identity matrix
+\newcommand{\identity}{\mathbf{I}}
+
+% Rotation matrices
+\newcommand{\rotmat}{\mathbf{R}}
+
+% Translation vectors
+\newcommand{\transvec}{\mathbf{t}}
+
+% Pose representation
+\newcommand{\pose}{\mathbf{p}}
+
+% Twist (velocity)
+\newcommand{\twist}{\mathbf{v}}
+
+% Angular velocity
+\newcommand{\angvel}{\bm{\omega}}
+
+% ===== Operators =====
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\argmax}{argmax}
+
+% ===== Probability notation =====
+\newcommand{\prob}[1]{P\left(#1\right)}
+\newcommand{\condprob}[2]{P\left(#1\,|\,#2\right)}
+\newcommand{\gaussian}[2]{\mathcal{N}\left(#1,\,#2\right)}
+\newcommand{\expectation}[1]{\mathbb{E}\left[#1\right]}
+
+% ===== Frames and coordinates =====
+\newcommand{\frame}[1]{\mathcal{F}_{#1}}
+\newcommand{\coord}[2]{{}^{#1}\mathbf{#2}}
+
+% ===== Special formatting =====
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\topic}[1]{\texttt{/}{#1}}
+\newcommand{\param}[1]{\texttt{#1}}
+\newcommand{\pkg}[1]{\texttt{#1}}
+\newcommand{\node}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+
+% ===== Emphasized terms =====
+\newcommand{\term}[1]{\textit{#1}}
+\newcommand{\important}[1]{\textbf{#1}}
+
+% ===== Units =====
+\newcommand{\meter}{\,\text{m}}
+\newcommand{\centimeter}{\,\text{cm}}
+\newcommand{\millimeter}{\,\text{mm}}
+\newcommand{\degree}{^\circ}
+\newcommand{\radian}{\,\text{rad}}
+\newcommand{\hertz}{\,\text{Hz}}
+\newcommand{\second}{\,\text{s}}
+\newcommand{\millisecond}{\,\text{ms}}
+
+% ===== Figure and table references =====
+\newcommand{\figref}[1]{Figure~\ref{#1}}
+\newcommand{\tabref}[1]{Table~\ref{#1}}
+\newcommand{\eqnref}[1]{Equation~(\ref{#1})}
+\newcommand{\chapref}[1]{Chapter~\ref{#1}}
+\newcommand{\secref}[1]{Section~\ref{#1}}
+\newcommand{\appref}[1]{Appendix~\ref{#1}}
+
+% ===== Algorithm elements =====
+\SetKwInput{KwInput}{Input}
+\SetKwInput{KwOutput}{Output}
+\SetKwInput{KwData}{Data}
+\SetKwInput{KwResult}{Result}
+
+% ===== Custom boxes =====
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+
+\newtcolorbox{keypoint}{
+    colback=blue!5!white,
+    colframe=blue!75!black,
+    fonttitle=\bfseries,
+    title=Key Point,
+    breakable
+}
+
+\newtcolorbox{troubleshooting}{
+    colback=red!5!white,
+    colframe=red!75!black,
+    fonttitle=\bfseries,
+    title=Troubleshooting Note,
+    breakable
+}
+
+\newtcolorbox{implementation}{
+    colback=green!5!white,
+    colframe=green!75!black,
+    fonttitle=\bfseries,
+    title=Implementation Detail,
+    breakable
+}
+
+% ===== Nomenclature entries (to be added in main document) =====
+% Usage: \nomenclature{symbol}{description}

@@ -1,0 +1,21 @@
+## **Phase 4: Nav2 Configuration**
+
+**Prompt:**  
+I need to configure the Nav2 stack for this robot.  
+**1\. Params (nav2\_params.yaml):**
+
+* Generate a standard Nav2 params file for a differential drive robot.  
+* **Critical Tuning:**  
+  * robot\_radius: 0.25  
+  * inflation\_radius: 0.45 (Ensure it can pass through 0.9m doors).  
+  * cost\_scaling\_factor: 5.0 (Steep cost near walls).  
+  * use\_sim\_time: true.  
+  * Controller: RegulatedPurePursuitController.
+
+**2\. Launch (navigation.launch.py):**
+
+* Arguments: map (path to yaml), use\_sim\_time.  
+* Include simulation.launch.py.  
+* Run robot\_localization.  
+* Run nav2\_bringup \-\> bringup\_launch.py.  
+  * Pass the map and nav2\_params.yaml.

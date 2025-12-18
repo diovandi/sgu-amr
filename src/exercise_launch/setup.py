@@ -16,11 +16,14 @@ setup(
         # Install launch files
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         
-        # Install world files
-        (os.path.join('share', package_name, 'worlds'), glob('worlds/*.world')),
+        # Install world files (both .world and .sdf)
+        (os.path.join('share', package_name, 'worlds'), glob('worlds/*.world') + glob('worlds/*.sdf')),
 
         # Install config files (YAML and XML)
         (os.path.join('share', package_name, 'config'), glob('config/*.xml') + glob('config/*.yaml')),
+
+        # Install URDF files
+        (os.path.join('share', package_name, 'urdf'), glob('urdf/*.urdf*')),
 
         # Install model files (pillar for Exercise 3)
         (os.path.join('share', package_name, 'models', 'pillar'), glob('models/pillar/*.sdf')),
@@ -42,6 +45,16 @@ setup(
         'console_scripts': [
             # This creates the 'pillar_driver' executable
             'pillar_driver = exercise_launch.pillar_driver:main',
+            # Phase 2: LIDAR reader node
+            'lidar_reader = exercise_launch.lidar_reader:main',
+            # Phase 4: Nav2 goal bridge (connects RViz2 goal tool to Nav2 action server)
+            'nav2_goal_bridge = exercise_launch.nav2_goal_bridge:main',
+            # Phase 5: one-time waypoint capture from RViz
+            'patrol_waypoint_recorder = exercise_launch.patrol_waypoint_recorder:main',
+            # Phase 5: automated Nav2 patrol
+            'house_patrol = exercise_launch.house_patrol:main',
+            # Phase 6: offline analysis helper (planned vs actual)
+            'patrol_analysis = exercise_launch.patrol_analysis:main',
         ],
     },
 )

@@ -31,5 +31,24 @@ chat_session_full_report*.md
 *_full_report*.md
 ros2_exercises3_4_report.md
 
+# Screenshots - keep local for LaTeX compilation but don't track in git
+docs/screenshots/
+
+# LaTeX build artifacts
+docs/*.aux
+docs/*.log
+docs/*.toc
+docs/*.lof
+docs/*.lot
+docs/*.out
+docs/*.bbl
+docs/*.blg
+docs/*.nlo
+docs/*.nls
+docs/*.ilg
+docs/*.idx
+docs/*.ind
+docs/compiled/*.pdf
+
 # Keep the main README tracked
 !README.md

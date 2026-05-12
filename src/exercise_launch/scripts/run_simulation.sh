@@ -1,6 +1,6 @@
 #!/bin/bash
-# Launch script for Exercise 3 on Pop!_OS Cosmic with NVIDIA GPU
-# This script sets up the proper environment for RViz2 and Gazebo
+# Launch script for custom rudimentary_bot simulation on Pop!_OS with NVIDIA GPU
+# Mirrors the environment setup used for other exercises to avoid GUI/rendering issues.
 
 # Ensure we're using X11/XWayland properly
 export QT_QPA_PLATFORM=xcb
@@ -41,5 +41,5 @@ export SGU_AMR_WORKSPACE="${SGU_AMR_WORKSPACE:-$WORKSPACE_ROOT}"
 source /opt/ros/jazzy/setup.bash
 source "$SGU_AMR_WORKSPACE/install/setup.bash"
 
-# Launch the exercise
-ros2 launch exercise_launch exercise3.launch.py "$@"
+# Launch the simulation
+ros2 launch exercise_launch simulation.launch.py "$@"

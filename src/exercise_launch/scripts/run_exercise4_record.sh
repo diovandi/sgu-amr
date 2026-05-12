@@ -12,7 +12,10 @@ export MESA_GL_VERSION_OVERRIDE=4.5
 xhost +local: 2>/dev/null || true
 
 source /opt/ros/jazzy/setup.bash
-source ~/ros2_ws/install/setup.bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+export SGU_AMR_WORKSPACE="${SGU_AMR_WORKSPACE:-$WORKSPACE_ROOT}"
+source "$SGU_AMR_WORKSPACE/install/setup.bash"
 
 ros2 launch exercise_launch exercise4_record.launch.py "$@"
 

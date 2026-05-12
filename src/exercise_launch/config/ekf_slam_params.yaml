@@ -1,0 +1,66 @@
+# EKF Configuration for SLAM (Phase 3)
+# Adapted from ekf_params.yaml but with publish_tf: true for SLAM compatibility
+# This EKF fuses /odom (from Gazebo diff drive) and /imu to publish odom->base_link transform
+
+ekf_filter_node:
+  ros__parameters:
+    use_sim_time: true
+    
+    # Output frame configuration
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: odom
+    
+    # Frequency and sensor timeout
+    frequency: 5.0  # Increased to 5Hz for better SLAM responsiveness (was 3Hz, try 5Hz with optimized settings)
+    sensor_timeout: 0.2  # Reduced timeout to match higher frequency
+    two_d_mode: true
+    print_diagnostics: true  # Enable diagnostics to see what's causing slowness
+    
+    # Transform publishing
+    # CRITICAL: publish_tf must be true for SLAM to work
+    # EKF publishes odom -> base_link transform that SLAM Toolbox needs
+    publish_tf: true
+    publish_acceleration: false
+    
+    # Odometry input (wheel odometry from Gazebo diff drive plugin)
+    odom0: /odom
+    odom0_config: [true,  true,  false,   # x, y, z
+                   false, false, true,    # roll, pitch, yaw
+                   true,  true,  false,   # vx, vy, vz
+                   false, false, true,    # vroll, vpitch, vyaw
+                   false, false, false]   # ax, ay, az
+    odom0_differential: false
+    odom0_relative: false
+    odom0_queue_size: 5  # Reduced from 10 to reduce processing overhead
+    
+    # IMU input (from Gazebo IMU plugin)
+    imu0: /imu
+    imu0_config: [false, false, false,   # x, y, z (not used from IMU)
+                  false, false, true,    # roll, pitch, yaw
+                  false, false, false,   # vx, vy, vz
+                  false, false, true,    # vroll, vpitch, vyaw
+                  true,  true,  false]   # ax, ay, az
+    imu0_differential: false
+    imu0_relative: false
+    imu0_remove_gravitational_acceleration: true
+    imu0_queue_size: 5  # Reduced from 10 to reduce processing overhead
+    
+    # Process noise covariance (tune as needed)
+    # Increased position uncertainty slightly to account for wheel slip
+    dynamic_process_noise_covariance: true  # Enable dynamic adjustment based on velocity (helps with wheel slip)
+    process_noise_covariance: [0.08,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.08,   0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.06,   0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.03,   0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.03,   0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.06,   0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.025,   0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.025,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.04,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.01,   0.0,    0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.01,   0.0,    0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.02,   0.0,    0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.01,   0.0,    0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.01,   0.0,
+                               0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.015]

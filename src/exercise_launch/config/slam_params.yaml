@@ -1,0 +1,61 @@
+# SLAM Toolbox Configuration for async_online_mapper
+# Used for Phase 3: SLAM mapping of the house environment
+
+slam_toolbox:
+  ros__parameters:
+    # ROS Integration Parameters
+    use_sim_time: true
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan
+    
+    # Map Configuration
+    resolution: 0.05  # 5cm resolution for occupancy grid
+    map_update_interval: 1.0  # Update map every 1 second (reduced for faster updates and better RViz responsiveness)
+    max_laser_range: 3.5  # Match LIDAR max range from URDF
+    min_laser_range: 0.4  # Match LIDAR min range from URDF (increased to 0.4m to completely eliminate robot body hits)
+    
+    # Transform Publishing
+    transform_publish_period: 0.02  # 50Hz transform publishing
+    transform_timeout: 0.5  # TF lookup timeout (increased for better tolerance)
+    tf_buffer_duration: 30.0  # Store TF messages for 30 seconds
+    
+    # Scan Processing
+    minimum_time_interval: 0.05  # Reduced from 0.1 to process scans more frequently for better drift correction
+    scan_queue_size: 10  # Increased queue size to prevent dropped scans (was 1, async mode can handle more)
+    throttle_scans: 1  # Process every scan
+    
+    # Scan Matching (CRITICAL for correcting odometry drift)
+    use_scan_matching: true  # Enable scan matching to correct odometry drift
+    # Very low thresholds so scan matching triggers frequently, especially during wheel slip
+    minimum_travel_distance: 0.01  # Extremely low (1cm) to start map publishing immediately with any movement
+    minimum_travel_heading: 0.01  # Extremely low (~0.6°) to start map publishing with any rotation
+    scan_buffer_maximum: 10  # Keep more scans in buffer for matching
+    scan_buffer_minimum: 0  # Start processing immediately (0 = no minimum, allows map to start publishing right away)
+    
+    # Loop Closure (CRITICAL for correcting accumulated drift)
+    loop_closure_detection_frequency: 1.0  # Check for loop closures every 1 second
+    loop_search_space_dimension: 0.5  # Search radius for loop closure (m)
+    
+    # Map Saving
+    use_map_saver: true  # Enable map saver service
+    
+    # Debugging
+    debug_logging: true  # Enable debug logging to diagnose issues
+    
+    # Interactive Mode
+    enable_interactive_mode: true  # Allow manual loop closure
+    
+    # Covariance Scaling
+    position_covariance_scale: 1.0
+    yaw_covariance_scale: 1.0
+    
+    # Stack Size
+    stack_size_to_use: 40000000  # 40MB stack size
+    
+    # Start Pose (empty array = start at origin [x, y, yaw])
+    # Leave unset or use [0.0, 0.0, 0.0] to start at origin
+    # map_start_pose: [0.0, 0.0, 0.0]  # Commented out - will use default (origin)
+    map_start_at_dock: false
+    map_file_name: ""  # No pre-loaded map

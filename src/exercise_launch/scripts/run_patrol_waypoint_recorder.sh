@@ -1,13 +1,13 @@
 #!/bin/bash
-# Launch script for Exercise 3 on Pop!_OS Cosmic with NVIDIA GPU
-# This script sets up the proper environment for RViz2 and Gazebo
+# Launch script for Phase 5: Patrol Waypoint Recorder
+# Pop!_OS with NVIDIA GPU compatibility
 
 # Ensure we're using X11/XWayland properly
 export QT_QPA_PLATFORM=xcb
 export GDK_BACKEND=x11
 
 # NVIDIA-specific settings for Wayland compatibility
-export __GLX_VENDOR_LIBRARY_NAME=nvidia
+export __GL_VENDOR_LIBRARY_NAME=nvidia
 export __NV_PRIME_RENDER_OFFLOAD=1
 export __VK_LAYER_NV_optimus=NVIDIA_only
 
@@ -41,5 +41,5 @@ export SGU_AMR_WORKSPACE="${SGU_AMR_WORKSPACE:-$WORKSPACE_ROOT}"
 source /opt/ros/jazzy/setup.bash
 source "$SGU_AMR_WORKSPACE/install/setup.bash"
 
-# Launch the exercise
-ros2 launch exercise_launch exercise3.launch.py "$@"
+# Run patrol waypoint recorder
+ros2 run exercise_launch patrol_waypoint_recorder "$@"

@@ -1,7 +1,7 @@
 LaTeX Compilation Note
 =====================
 
-This workspace does not have LaTeX installed (pdflatex, bibtex, makeindex not found).
+This workspace does not have LaTeX installed (pdflatex, biber, makeindex not found).
 
 To compile the report, you have two options:
 
@@ -11,7 +11,7 @@ sudo apt-get update
 sudo apt-get install texlive-full
 
 Then compile with:
-cd /home/dio/ros2_ws/docs/final-project
+cd docs/final-project
 ./compile_report.sh
 
 OPTION 2: Use Overleaf (Online)

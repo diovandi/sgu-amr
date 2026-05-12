@@ -98,7 +98,6 @@ def generate_launch_description():
     )
     
     # Nav2 Bringup - includes all Nav2 components (map_server, amcl, planner, controller, etc.)
-    # Note: All launch_arguments values must be strings, not LaunchConfiguration objects
     # Start immediately - Nav2's lifecycle manager will handle proper startup sequencing
     nav2_bringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(

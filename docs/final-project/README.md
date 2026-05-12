@@ -400,7 +400,7 @@ make view     # Open PDF
 ```bash
 cd docs/final-project
 pdflatex final_project_report.tex
-bibtex final_project_report
+biber final_project_report
 pdflatex final_project_report.tex
 pdflatex final_project_report.tex
 ```

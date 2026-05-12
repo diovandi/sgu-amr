@@ -6,7 +6,7 @@ MAIN = final_project_report
 
 # LaTeX compiler
 LATEX = pdflatex
-BIBTEX = bibtex
+BIBER = biber
 MAKEINDEX = makeindex
 
 # Compilation flags
@@ -27,8 +27,8 @@ all: $(MAIN).pdf
 $(MAIN).pdf: $(MAIN).tex references.bib preamble.tex commands.tex
 	@echo "=== First LaTeX pass ==="
 	$(LATEX) $(LATEX_FLAGS) $(MAIN).tex
-	@echo "\n=== Running BibTeX ==="
-	-$(BIBTEX) $(MAIN)
+	@echo "\n=== Running Biber ==="
+	-$(BIBER) $(MAIN)
 	@echo "\n=== Running makeindex for nomenclature ==="
 	-$(MAKEINDEX) $(MAIN).nlo -s nomencl.ist -o $(MAIN).nls
 	@echo "\n=== Second LaTeX pass ==="

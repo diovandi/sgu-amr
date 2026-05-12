@@ -4,6 +4,11 @@
 
 set -e  # Exit on error
 
+OPEN_PDF="${OPEN_PDF:-false}"
+if [[ "${1:-}" == "--open" ]]; then
+    OPEN_PDF="true"
+fi
+
 # Change to script directory
 cd "$(dirname "$0")"
 
@@ -81,12 +86,11 @@ echo "Output: compiled/$MAIN.pdf"
 echo ""
 echo "To view the PDF:"
 echo "  xdg-open compiled/$MAIN.pdf"
+echo "  or rerun this script with --open"
 echo ""
 
-# Optionally open the PDF
-read -p "Open PDF now? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+# Optionally open the PDF when explicitly requested.
+if [[ "$OPEN_PDF" == "true" || "$OPEN_PDF" == "1" ]]; then
     if command -v xdg-open &> /dev/null; then
         xdg-open "compiled/$MAIN.pdf" &
     elif command -v evince &> /dev/null; then

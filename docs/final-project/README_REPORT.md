@@ -24,7 +24,7 @@ This document provides instructions for compiling the LaTeX-based final project 
 
 - **Build Tools:**
   - `pdflatex`
-  - `bibtex` or `biber`
+  - `biber`
   - `makeindex`
   - `make` (optional, for using Makefile)
 
@@ -47,13 +47,13 @@ sudo apt-get install texlive-latex-extra texlive-science texlive-bibtex-extra \
 The simplest method:
 
 ```bash
-cd /home/dio/ros2_ws/docs/final-project
+cd docs/final-project
 ./compile_report.sh
 ```
 
 This script will:
 1. Run pdflatex (first pass)
-2. Process bibliography with bibtex
+2. Process bibliography with biber
 3. Generate nomenclature with makeindex
 4. Run pdflatex (second pass)
 5. Run pdflatex (third pass for cross-references)
@@ -66,7 +66,7 @@ This script will:
 If you prefer using Make:
 
 ```bash
-cd /home/dio/ros2_ws/docs/final-project
+cd docs/final-project
 make
 ```
 
@@ -83,13 +83,13 @@ make
 For manual control or debugging:
 
 ```bash
-cd /home/dio/ros2_ws/docs/final-project
+cd docs/final-project
 
 # First pass
 pdflatex -interaction=nonstopmode final_project_report.tex
 
 # Process bibliography
-bibtex final_project_report
+biber final_project_report
 
 # Generate nomenclature
 makeindex final_project_report.nlo -s nomencl.ist -o final_project_report.nls
@@ -152,12 +152,12 @@ sudo apt-get install texlive-full
 
 ### Error: Bibliography not showing up
 
-**Cause:** BibTeX may have failed or citations not present in text.
+**Cause:** Biber may have failed or citations not present in text.
 
 **Solution:**
 1. Ensure you have `\cite{...}` commands in the document
-2. Check `final_project_report.blg` for BibTeX errors
-3. Recompile with the full sequence (3 pdflatex + 1 bibtex passes)
+2. Check `final_project_report.blg` for Biber errors
+3. Recompile with the full sequence (3 pdflatex + 1 biber pass)
 
 ### Error: Cross-references showing "??"
 

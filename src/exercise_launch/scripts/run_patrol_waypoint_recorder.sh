@@ -7,7 +7,7 @@ export QT_QPA_PLATFORM=xcb
 export GDK_BACKEND=x11
 
 # NVIDIA-specific settings for Wayland compatibility
-export __GL_VENDOR_LIBRARY_NAME=nvidia
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
 export __NV_PRIME_RENDER_OFFLOAD=1
 export __VK_LAYER_NV_optimus=NVIDIA_only
 

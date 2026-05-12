@@ -219,7 +219,7 @@
       <always_on>true</always_on>
       <visualize>true</visualize>
       <!-- Try CPU lidar if gpu_lidar has rendering artifacts causing false walls -->
-      <!-- No visibility mask - rely on height (z=0.5m) and min_range (0.4m) to avoid self-hits -->
+      <!-- No visibility mask - rely on laser height (z=0.25m) and min_range (0.4m) to avoid self-hits -->
       <lidar>
         <scan>
           <horizontal>
@@ -238,7 +238,7 @@
         <range>
           <min>0.4</min>  <!-- Increased to 0.4m to completely eliminate robot body hits -->
           <!-- Chassis corners: sqrt(0.25^2 + 0.15^2) ≈ 0.29m. Wheels extend to ~0.275m from center. -->
-          <!-- With LIDAR at z=0.5m, 0.4m min range ensures no false wall detections from robot body -->
+          <!-- With LIDAR at z=0.25m, 0.4m min range ensures no false wall detections from robot body -->
           <max>10.0</max> <!-- Increased physical sensor range to see across rooms -->
           <resolution>0.01</resolution>
         </range>

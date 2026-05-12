@@ -1,9 +1,9 @@
 # Potential Causes of False Wall Detection (Beyond Self-Detection)
 
 ## 1. **Ground Plane Detection**
-- **Issue**: LIDAR at z=0.5m might be detecting the ground plane (z=0) as a wall
+- **Issue**: LIDAR at z=0.25m might be detecting the ground plane (z=0) as a wall
 - **Symptom**: Perpendicular wall appears at fixed distance in front of robot
-- **Check**: Inspect scan ranges - if they're all ~0.5m, it's detecting the ground
+- **Check**: Inspect scan ranges - if they're all ~0.25m, it's detecting the ground
 - **Fix**: Increase LIDAR height further or add ground plane filtering
 
 ## 2. **GPU LIDAR Rendering Artifacts**

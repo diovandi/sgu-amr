@@ -119,10 +119,11 @@ class PatrolAnalysis(Node):
 
         # Transform to map frame using TF from bag
         try:
+            odom_stamp = rclpy.time.Time.from_msg(pose_odom.header.stamp)
             tf = self._tf_buffer.lookup_transform(
                 self._map_frame,
                 pose_odom.header.frame_id or self._odom_frame,
-                rclpy.time.Time(),
+                odom_stamp,
                 timeout=rclpy.duration.Duration(seconds=0.1),
             )
         except TransformException:
@@ -143,7 +144,7 @@ class PatrolAnalysis(Node):
             new_ps.pose = pose_map
             pose_map = new_ps
 
-        pose_map.header.stamp = self.get_clock().now().to_msg()
+        pose_map.header.stamp = pose_odom.header.stamp
         pose_map.header.frame_id = self._map_frame
 
         # Publish actual_xy stream for PlotJuggler

@@ -1612,8 +1612,8 @@ User ran complete SLAM workflow:
 - ✅ No false walls (front caster wheel working)
 - ✅ Clean LIDAR scans (no self-detection)
 - ✅ Map saved successfully:
-  - `/home/dio/ros2_ws/maps/house_map.pgm` (69 KB)
-  - `/home/dio/ros2_ws/maps/house_map.yaml` (131 bytes)
+  - `data/final-project/maps/house_map.pgm` (69 KB)
+  - `data/final-project/maps/house_map.yaml` (131 bytes)
 - ✅ Map size: 263 × 265 cells at 0.05 m/pixel resolution
 
 **User Confirmation**:
@@ -1869,8 +1869,8 @@ User ran complete SLAM workflow:
 
 ### 16.4 Generated Files
 
-- **Map Image**: `/home/dio/ros2_ws/maps/house_map.pgm` (69 KB)
-- **Map Metadata**: `/home/dio/ros2_ws/maps/house_map.yaml` (131 bytes)
+- **Map Image**: `data/final-project/maps/house_map.pgm` (69 KB)
+- **Map Metadata**: `data/final-project/maps/house_map.yaml` (131 bytes)
 
 ---
 

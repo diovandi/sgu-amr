@@ -101,7 +101,7 @@ cd /home/dio/ros2_ws && git status
 **Result**: 
 - On branch `main`
 - Branch up-to-date with `origin/main`
-- Some uncommitted changes (deleted `exercise4_recording/path_plot.png`, untracked `docs/screenshots/ex4/path_plot.png`)
+- Some uncommitted changes before repository cleanup (moved `exercise4_recording/path_plot.png` to `docs/exercises/exercise4/path_plot.png`)
 
 ### 3.2 Branch Creation
 
